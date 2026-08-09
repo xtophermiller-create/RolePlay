@@ -17,8 +17,6 @@
 
   const getUrl = root.getAttribute("data-api-get") || "";
   const pingUrl = root.getAttribute("data-api-ping") || "";
-  const awayUrl = root.getAttribute("data-api-away") || "";
-  const inviteUrl = root.getAttribute("data-api-invite") || "";
   const roleUrl = root.getAttribute("data-api-role") || "";
   const startUrl = root.getAttribute("data-api-start") || "";
   const playPageUrl = root.getAttribute("data-api-play-page") || "";
@@ -59,7 +57,9 @@
 
   const STATUS_LABEL = {
     lobby: "Лобби",
-    active: "Идёт",
+    started: "Подготовка",
+    active: "Подготовка",
+    ready: "Идёт",
     finished: "Завершена",
     cancelled: "Отменена",
   };
@@ -199,7 +199,6 @@
     }
 
     if (session.status === "cancelled" || session.status === "finished") {
-      root.querySelector("[data-lobby-invite]")?.setAttribute("hidden", "");
       if (startBtn) startBtn.disabled = true;
     }
   };
@@ -216,7 +215,11 @@
     state.session = data.session;
     state.free_roles = data.free_roles || [];
     render();
-    if (data.session.status === "active") {
+    if (
+      data.session.status === "started" ||
+      data.session.status === "active" ||
+      data.session.status === "ready"
+    ) {
       goPlay(playPageUrl);
       return;
     }
@@ -317,46 +320,6 @@
     }
   });
 
-  const inviteHandle = root.querySelector("[data-lobby-invite-handle]");
-  const inviteSend = root.querySelector("[data-lobby-invite-send]");
-  let inviteBusy = false;
-
-  const sendInvite = async () => {
-    if (isGuest || inviteBusy || !inviteUrl || !inviteHandle) return;
-    const handle = (inviteHandle.value || "").trim();
-    if (!handle) {
-      toast("Укажите nickname или login", "error");
-      return;
-    }
-    inviteBusy = true;
-    inviteSend?.setAttribute("disabled", "true");
-    try {
-      await postJson(inviteUrl, { handle });
-      inviteHandle.value = "";
-      toast("Приглашение отправлено", "success");
-    } catch (err) {
-      if (err.data?.error === "guests_forbidden") {
-        bounceGuest();
-        return;
-      }
-      toast(err.message || "Не удалось пригласить", "error");
-    } finally {
-      inviteBusy = false;
-      inviteSend?.removeAttribute("disabled");
-    }
-  };
-
-  inviteSend?.addEventListener("click", (event) => {
-    event.preventDefault();
-    void sendInvite();
-  });
-  inviteHandle?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      void sendInvite();
-    }
-  });
-
   startBtn?.addEventListener("click", async (event) => {
     event.preventDefault();
     if (isGuest || !startUrl || startBtn.disabled) return;
@@ -381,7 +344,12 @@
 
   const sessionOpen = () => {
     const status = state.session?.status;
-    return status === "lobby" || status === "active";
+    return (
+      status === "lobby" ||
+      status === "started" ||
+      status === "active" ||
+      status === "ready"
+    );
   };
 
   /** Уход без ожидания ответа (закрытие вкладки) — fetch keepalive + sendBeacon. */
@@ -462,7 +430,7 @@
   // visibilitychange / Alt+Tab сюда не входят — ping продолжает работать.
   window.addEventListener("pagehide", () => {
     if (departed || !sessionOpen()) return;
-    postKeepalive(awayUrl || (isHost ? cancelUrl : leaveUrl));
+    postKeepalive(isHost ? cancelUrl : leaveUrl);
   });
 
   render();

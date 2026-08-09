@@ -11,6 +11,7 @@ from typing import Any
 from flask import current_app
 
 from app.domain.scenario.constants import FILE_EXTENSION
+from app.domain.scenario.document import coerce_document
 
 
 def scenarios_dir() -> str:
@@ -60,7 +61,8 @@ def read_document(file_name: str) -> dict[str, Any]:
         data = json.load(fh)
     if not isinstance(data, dict):
         raise ValueError("scenario file root must be an object")
-    return data
+    # На диске ещё могут лежать v1 (meta/observer/callout) — отдаём уже v2.
+    return coerce_document(data)
 
 
 def delete_file(file_name: str) -> None:

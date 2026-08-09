@@ -11,7 +11,7 @@ class AuthAttempt(db.Model):
 
     attempt_id = db.Column(db.Integer, primary_key=True)
     action = db.Column(db.String(16), nullable=False)
-    identity_hash = db.Column(db.String(64), nullable=False)
+    identity_hash = db.Column(db.String(256), nullable=False)
     failures = db.Column(db.Integer, nullable=False, default=0)
     window_started_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
     blocked_until = db.Column(db.DateTime, nullable=True)

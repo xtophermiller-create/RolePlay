@@ -12,18 +12,24 @@ from app.services.auth import (
 
 _LOGIN_MAX = 64
 _NICKNAME_MAX = 64
-_PASSWORD_MAX = 255
+_PASSWORD_MAX = 64
 
 
 def get_user(user_id: int) -> User | None:
     return User.query.filter_by(user_id=user_id).first()
-
 
 def get_user_by_login(login: str) -> User | None:
     login = (login or "").strip()
     if not login:
         return None
     return User.query.filter_by(login=login).first()
+
+
+def get_user_by_nickname(nickname: str) -> User | None:
+    nickname = (nickname or "").strip()
+    if not nickname:
+        return None
+    return User.query.filter_by(nickname=nickname).first()
 
 
 def display_name(user: User) -> str:
@@ -33,19 +39,17 @@ def display_name(user: User) -> str:
 
 
 def find_user_by_handle(handle: str) -> User | None:
-    """
-    Найти пользователя по nickname или login.
-    Сначала nickname, потом login (для приглашений в сессию).
-    """
+    """Найти по nickname или login (сначала nickname). Гостей не возвращает."""
     value = (handle or "").strip()
     if not value:
         return None
-    by_nick = User.query.filter(
-        User.nickname == value, User.is_guest.is_(False)
-    ).first()
-    if by_nick:
+    by_nick = get_user_by_nickname(value)
+    if by_nick and not by_nick.is_guest:
         return by_nick
-    return User.query.filter(User.login == value, User.is_guest.is_(False)).first()
+    by_login = get_user_by_login(value)
+    if by_login and not by_login.is_guest:
+        return by_login
+    return None
 
 
 def set_nickname(user_id: int, nickname: str | None) -> Result[User]:

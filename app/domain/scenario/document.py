@@ -130,6 +130,113 @@ def clone_document(document: dict[str, Any]) -> dict[str, Any]:
     return deepcopy(document)
 
 
+def coerce_document(document: Any) -> dict[str, Any]:
+    """Привести произвольный JSON к скелету v2 (best-effort).
+
+    Старый v1: meta.title, roles.observer, callout в body.
+    Невалидный вход → пустой v2-документ.
+    """
+    if not isinstance(document, dict):
+        return empty_document()
+
+    src = deepcopy(document)
+    title = src.get("title")
+    if not isinstance(title, str) or not title.strip():
+        meta = src.get("meta")
+        if isinstance(meta, dict) and isinstance(meta.get("title"), str):
+            title = meta["title"]
+        else:
+            title = ""
+
+    roles_in = src.get("roles") if isinstance(src.get("roles"), dict) else {}
+    roles_out: dict[str, Any] = {}
+    for key, default_label in (
+        (ROLE_ACTOR1, "Роль 1"),
+        (ROLE_ACTOR2, "Роль 2"),
+    ):
+        raw = roles_in.get(key)
+        roles_out[key] = _coerce_actor(raw, default_label=default_label)
+
+    return {
+        "format": FORMAT_NAME,
+        "version": FORMAT_VERSION,
+        "title": title.strip()[: _TEXT_LIMITS["title"]],
+        "roles": roles_out,
+    }
+
+
+def _coerce_actor(role: Any, *, default_label: str) -> dict[str, Any]:
+    base = empty_actor(label=default_label)
+    if not isinstance(role, dict):
+        return base
+
+    for field in ("label", "goal", "context"):
+        value = role.get(field)
+        if isinstance(value, str):
+            base[field] = value.strip()[: _TEXT_LIMITS[field]]
+
+    body = role.get("body")
+    if isinstance(body, dict) and body.get("type") == "doc":
+        base["body"] = _coerce_body_node(body)
+    return base
+
+
+def _coerce_body_node(node: Any) -> Any:
+    """Рекурсивно: callout → section, режем неизвестные узлы/marks."""
+    if not isinstance(node, dict):
+        return node
+
+    node_type = node.get("type")
+    if node_type == "callout":
+        attrs = node.get("attrs") if isinstance(node.get("attrs"), dict) else {}
+        title = attrs.get("title") or attrs.get("label") or ""
+        if not isinstance(title, str):
+            title = ""
+        out: dict[str, Any] = {
+            "type": "section",
+            "attrs": {"title": title.strip()[: _TEXT_LIMITS["section_title"]]},
+        }
+        content = node.get("content")
+        if isinstance(content, list):
+            out["content"] = [_coerce_body_node(child) for child in content]
+        else:
+            out["content"] = []
+        return out
+
+    if node_type not in _BODY_NODES:
+        # Неизвестный блок — выкидываем, чтобы validate прошёл.
+        return {"type": "paragraph"}
+
+    out = {"type": node_type}
+    if "attrs" in node and isinstance(node.get("attrs"), dict):
+        out["attrs"] = deepcopy(node["attrs"])
+    if node_type == "text":
+        text = node.get("text")
+        out["text"] = text if isinstance(text, str) else ""
+        marks = node.get("marks")
+        if isinstance(marks, list):
+            cleaned = [
+                deepcopy(mark)
+                for mark in marks
+                if isinstance(mark, dict) and mark.get("type") in _BODY_MARKS
+            ]
+            if cleaned:
+                out["marks"] = cleaned
+        return out
+
+    content = node.get("content")
+    if isinstance(content, list):
+        out["content"] = [
+            coerced
+            for child in content
+            if (coerced := _coerce_body_node(child)) is not None
+        ]
+    elif allowed := _ALLOWED_CHILDREN.get(node_type):
+        if allowed is not None:
+            out["content"] = []
+    return out
+
+
 def validate_document(document: Any) -> list[str]:
     """Пустой список = ок."""
     if not isinstance(document, dict):

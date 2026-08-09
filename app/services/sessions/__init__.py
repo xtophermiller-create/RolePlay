@@ -1,5 +1,6 @@
-from . import history, invitations, participants
+from . import participants
 from .core import (
+    actors_ready,
     cancel_session,
     create_session,
     finish_session,
@@ -9,14 +10,15 @@ from .core import (
     list_participants,
     participant_to_dict,
     play_payload,
+    reopen_session,
     scenario_document,
     session_to_dict,
+    set_session_scenario,
     start_session,
 )
-from .history import complete_session, get_history_item, list_history
-from .score import score_fields, score_session
 
 __all__ = [
+    "actors_ready",
     "create_session",
     "get_session",
     "get_session_by_code",
@@ -26,15 +28,10 @@ __all__ = [
     "play_payload",
     "start_session",
     "finish_session",
-    "complete_session",
+    "reopen_session",
+    "set_session_scenario",
     "cancel_session",
     "scenario_document",
     "session_to_dict",
-    "list_history",
-    "get_history_item",
-    "score_session",
-    "score_fields",
-    "history",
-    "invitations",
     "participants",
 ]

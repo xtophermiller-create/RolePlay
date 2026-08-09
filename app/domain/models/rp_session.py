@@ -7,16 +7,26 @@ def _utcnow():
 
 
 STATUS_LOBBY = "lobby"
-STATUS_ACTIVE = "active"
+STATUS_STARTED = "started"
+STATUS_READY = "ready"
 STATUS_FINISHED = "finished"
 STATUS_CANCELLED = "cancelled"
+# Старые сессии в БД могли остаться с active (= brief / started).
+STATUS_ACTIVE = "active"
 
 SESSION_STATUSES = (
     STATUS_LOBBY,
-    STATUS_ACTIVE,
+    STATUS_STARTED,
+    STATUS_READY,
     STATUS_FINISHED,
     STATUS_CANCELLED,
+    STATUS_ACTIVE,
 )
+
+# Briefing после старта из лобби; play — когда оба актёра нажали «Готов».
+BRIEF_STATUSES = (STATUS_STARTED, STATUS_ACTIVE)
+PLAY_STATUSES = (STATUS_READY,)
+LIVE_STATUSES = BRIEF_STATUSES + PLAY_STATUSES
 
 
 class RpSession(db.Model):

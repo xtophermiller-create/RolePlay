@@ -1,13 +1,13 @@
-"""Участники и роли в сессии (без presence/ping)."""
+"""Участники и роли в сессии."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from app.domain.models import RpSession, RpSessionParticipant
 from app.domain.models.rp_session import (
-    STATUS_ACTIVE,
+    BRIEF_STATUSES,
+    LIVE_STATUSES,
     STATUS_LOBBY,
+    STATUS_READY,
 )
 from app.domain.models.rp_session_participant import (
     ROLE_ACTOR1,
@@ -23,17 +23,10 @@ from app.services.sessions import core as sessions_core
 MAX_SESSION_PARTICIPANTS = 100
 _ACTOR_ROLES = (ROLE_ACTOR1, ROLE_ACTOR2)
 
-# Совместимость со старыми импортами.
-SessionParticipant = RpSessionParticipant
-
-
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
-
 
 def _open_session(session_id: int) -> RpSession | None:
     row = sessions_core.get_session(session_id)
-    if not row or row.status not in (STATUS_LOBBY, STATUS_ACTIVE):
+    if not row or row.status not in (STATUS_LOBBY, *LIVE_STATUSES):
         return None
     return row
 
@@ -41,6 +34,8 @@ def _open_session(session_id: int) -> RpSession | None:
 def add_participant(session_id: int, user_id: int) -> Result[RpSessionParticipant]:
     row = _open_session(session_id)
     if not row:
+        return Err("session_closed")
+    if row.status != STATUS_LOBBY:
         return Err("session_closed")
 
     existing = sessions_core.get_participant(session_id, user_id)
@@ -59,6 +54,7 @@ def add_participant(session_id: int, user_id: int) -> Result[RpSessionParticipan
         session_id=session_id,
         user_id=user_id,
         role=ROLE_OBSERVER,
+        is_ready=False,
     )
     db.session.add(p)
     if not try_commit():
@@ -70,7 +66,7 @@ def leave_session(session_id: int, user_id: int) -> Result[bool]:
     row = sessions_core.get_session(session_id)
     if not row:
         return Err("not_found")
-    if row.status == STATUS_ACTIVE:
+    if row.status in LIVE_STATUSES:
         return Err("cannot_leave_active")
     if row.host_user_id == user_id:
         return Err("host_cannot_leave")
@@ -114,9 +110,41 @@ def choose_role(
     else:
         p.role = ROLE_OBSERVER
 
+    p.is_ready = False
     if not try_commit():
         return Err("db_commit_failed")
     return Ok(p)
+
+
+def mark_ready(session_id: int, user_id: int) -> Result[RpSession]:
+    """Актёр жмёт «Готов». Когда оба готовы — сессия started → ready."""
+    row = sessions_core.get_session(session_id)
+    if not row:
+        return Err("not_found")
+    if row.status not in BRIEF_STATUSES:
+        if row.status == STATUS_READY:
+            return Ok(row)
+        return Err("invalid_status")
+
+    p = sessions_core.get_participant(session_id, user_id)
+    if not p:
+        return Err("not_participant")
+    if p.role not in _ACTOR_ROLES:
+        return Err("forbidden")
+
+    p.is_ready = True
+
+    ready = {ROLE_ACTOR1: False, ROLE_ACTOR2: False}
+    for other in sessions_core.list_participants(session_id):
+        if other.role in ready and other.is_ready:
+            ready[other.role] = True
+    if ready[ROLE_ACTOR1] and ready[ROLE_ACTOR2]:
+        row.status = STATUS_READY
+        row.ready_at = sessions_core._utcnow()
+
+    if not try_commit():
+        return Err("db_commit_failed")
+    return Ok(row)
 
 
 def roles_ready(session_id: int) -> bool:
@@ -128,38 +156,24 @@ def roles_ready(session_id: int) -> bool:
     return counts[ROLE_ACTOR1] == 1 and counts[ROLE_ACTOR2] == 1
 
 
-def actors_ready(session_id: int) -> bool:
-    """Совместимость со старым API: теперь = roles_ready (is_ready убран)."""
-    return roles_ready(session_id)
+def free_roles(session_id: int) -> list[str]:
+    """Свободные роли для UI лобби (observer всегда доступен)."""
+    taken = {
+        p.role
+        for p in sessions_core.list_participants(session_id)
+        if p.role in _ACTOR_ROLES
+    }
+    free = [role for role in _ACTOR_ROLES if role not in taken]
+    free.append(ROLE_OBSERVER)
+    return free
 
 
-def set_ready(session_id: int, user_id: int, ready: bool = True) -> Result[bool]:
-    """Заглушка: ready-флагов больше нет."""
-    del session_id, user_id, ready
-    return Err("not_implemented")
-
-
-def mark_away(session_id: int, user_id: int) -> Result[bool]:
-    """Заглушка: presence убран."""
-    del session_id, user_id
-    return Ok(True)
-
-
-def ping(session_id: int, user_id: int) -> Result[dict]:
-    """Заглушка: отдаём текущее состояние сессии без heartbeat."""
+def heartbeat(session_id: int, user_id: int) -> Result[RpSession]:
+    """Обновление состояния лобби/боя (presence убран — просто проверка доступа)."""
     row = sessions_core.get_session(session_id)
     if not row:
         return Err("not_found")
     p = sessions_core.get_participant(session_id, user_id)
     if not p and row.host_user_id != user_id:
         return Err("not_participant")
-    return Ok(sessions_core.session_to_dict(row))
-
-
-def prune_stale_participants(session_id: int) -> dict:
-    del session_id
-    return {"removed": 0, "cancelled": False}
-
-
-def prune_all_stale_sessions() -> int:
-    return 0
+    return Ok(row)

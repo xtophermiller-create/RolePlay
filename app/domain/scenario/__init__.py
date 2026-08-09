@@ -8,6 +8,7 @@ from .constants import (
 )
 from .document import (
     clone_document,
+    coerce_document,
     document_title,
     empty_actor,
     empty_body,
@@ -42,6 +43,7 @@ __all__ = [
     "empty_actor",
     "document_title",
     "validate_document",
+    "coerce_document",
     "clone_document",
     "get_roles",
     "get_role",

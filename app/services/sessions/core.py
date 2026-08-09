@@ -10,14 +10,16 @@ from typing import Any
 
 from app.domain.models import RpSession, RpSessionParticipant, Scenario, User
 from app.domain.models.rp_session import (
+    LIVE_STATUSES,
+    PLAY_STATUSES,
     SESSION_STATUSES,
-    STATUS_ACTIVE,
     STATUS_CANCELLED,
     STATUS_FINISHED,
     STATUS_LOBBY,
+    STATUS_STARTED,
 )
-from app.domain.models.rp_session_participant import ROLE_OBSERVER
-from app.domain.scenario.document import document_title
+from app.domain.models.rp_session_participant import ROLE_ACTOR1, ROLE_ACTOR2, ROLE_OBSERVER
+from app.domain.scenario.document import coerce_document, document_title
 from app.extensions import db
 from app.services.commit import try_commit
 from app.services.result import Err, Ok, Result
@@ -68,8 +70,10 @@ def list_participants(session_id: int) -> list[RpSessionParticipant]:
     )
 
 
-def create_session(host_user_id: int, scenario_id: int) -> Result[RpSession]:
-    """Хост создаёт сессию по своему сценарию → lobby + сам как observer."""
+def _scenario_snapshot_for_host(
+    host_user_id: int, scenario_id: int
+) -> Result[tuple[Scenario, str, str]]:
+    """Сценарий хозяина → (row, title, snapshot_json)."""
     host = User.query.filter_by(user_id=host_user_id).first()
     if not host:
         return Err("user_not_found")
@@ -92,12 +96,21 @@ def create_session(host_user_id: int, scenario_id: int) -> Result[RpSession]:
         snapshot = json.dumps(document, ensure_ascii=False)
     except (TypeError, ValueError):
         return Err("scenario_snapshot_failed")
+    return Ok((scenario, title[:200], snapshot))
+
+
+def create_session(host_user_id: int, scenario_id: int) -> Result[RpSession]:
+    """Хост создаёт сессию по своему сценарию → lobby + сам как observer."""
+    loaded = _scenario_snapshot_for_host(host_user_id, scenario_id)
+    if not loaded:
+        return Err(loaded.error)
+    _scenario, title, snapshot = loaded.value
 
     row = RpSession(
         code=_new_code(),
         host_user_id=host_user_id,
         scenario_id=scenario_id,
-        scenario_title=title[:200],
+        scenario_title=title,
         scenario_snapshot=snapshot,
         status=STATUS_LOBBY,
     )
@@ -108,8 +121,51 @@ def create_session(host_user_id: int, scenario_id: int) -> Result[RpSession]:
             session_id=row.session_id,
             user_id=host_user_id,
             role=ROLE_OBSERVER,
+            is_ready=False,
         )
     )
+    if not try_commit():
+        return Err("db_commit_failed")
+    return Ok(row)
+
+
+def set_session_scenario(
+    session_id: int, host_user_id: int, scenario_id: int
+) -> Result[RpSession]:
+    """Сменить сценарий сессии. Только lobby, только хост."""
+    row = get_session(session_id)
+    if not row or row.host_user_id != host_user_id:
+        return Err("not_found")
+    if row.status != STATUS_LOBBY:
+        return Err("invalid_status")
+
+    loaded = _scenario_snapshot_for_host(host_user_id, scenario_id)
+    if not loaded:
+        return Err(loaded.error)
+    _scenario, title, snapshot = loaded.value
+
+    row.scenario_id = scenario_id
+    row.scenario_title = title
+    row.scenario_snapshot = snapshot
+    if not try_commit():
+        return Err("db_commit_failed")
+    return Ok(row)
+
+
+def reopen_session(session_id: int, host_user_id: int) -> Result[RpSession]:
+    """finished → lobby. Участники и роли сохраняются, таймстемпы сбрасываются."""
+    row = get_session(session_id)
+    if not row or row.host_user_id != host_user_id:
+        return Err("not_found")
+    if row.status != STATUS_FINISHED:
+        return Err("invalid_status")
+
+    row.status = STATUS_LOBBY
+    row.started_at = None
+    row.ready_at = None
+    row.finished_at = None
+    for p in list_participants(session_id):
+        p.is_ready = False
     if not try_commit():
         return Err("db_commit_failed")
     return Ok(row)
@@ -126,8 +182,11 @@ def start_session(session_id: int, host_user_id: int) -> Result[RpSession]:
     if not participants_service.roles_ready(session_id):
         return Err("roles_not_ready")
     now = _utcnow()
-    row.status = STATUS_ACTIVE
+    row.status = STATUS_STARTED
     row.started_at = now
+    row.ready_at = None
+    for p in list_participants(session_id):
+        p.is_ready = False
     if not try_commit():
         return Err("db_commit_failed")
     return Ok(row)
@@ -137,7 +196,7 @@ def finish_session(session_id: int, host_user_id: int) -> Result[RpSession]:
     row = get_session(session_id)
     if not row or row.host_user_id != host_user_id:
         return Err("not_found")
-    if row.status not in (STATUS_LOBBY, STATUS_ACTIVE):
+    if row.status not in (STATUS_LOBBY, *LIVE_STATUSES):
         return Err("invalid_status")
     row.status = STATUS_FINISHED
     row.finished_at = _utcnow()
@@ -160,7 +219,21 @@ def cancel_session(session_id: int, host_user_id: int) -> Result[RpSession]:
 
 
 def scenario_document(session: RpSession) -> dict[str, Any]:
-    return json.loads(session.scenario_snapshot)
+    return coerce_document(json.loads(session.scenario_snapshot))
+
+
+def actors_ready(session_id: int) -> bool:
+    """Оба актёра отметили is_ready (или сессия уже в ready)."""
+    row = get_session(session_id)
+    if not row:
+        return False
+    if row.status in PLAY_STATUSES:
+        return True
+    ready = {ROLE_ACTOR1: False, ROLE_ACTOR2: False}
+    for p in list_participants(session_id):
+        if p.role in ready and p.is_ready:
+            ready[p.role] = True
+    return ready[ROLE_ACTOR1] and ready[ROLE_ACTOR2]
 
 
 def play_payload(session_id: int, user_id: int) -> Result[dict[str, Any]]:
@@ -171,10 +244,11 @@ def play_payload(session_id: int, user_id: int) -> Result[dict[str, Any]]:
     participant = get_participant(session_id, user_id)
     if not participant and row.host_user_id != user_id:
         return Err("not_participant")
-    if row.status not in (STATUS_ACTIVE, STATUS_FINISHED):
+    if row.status not in (*LIVE_STATUSES, STATUS_FINISHED):
         return Err("not_started")
 
     my_role = participant.role if participant else None
+    my_ready = bool(participant and participant.is_ready)
     try:
         document = scenario_document(row)
     except (TypeError, ValueError, json.JSONDecodeError):
@@ -184,6 +258,8 @@ def play_payload(session_id: int, user_id: int) -> Result[dict[str, Any]]:
         {
             "session": session_to_dict(row),
             "my_role": my_role,
+            "my_ready": my_ready,
+            "actors_ready": actors_ready(session_id),
             "document": document,
             "ui_hint": {
                 "actor1": ["roles.actor1"],
@@ -220,6 +296,7 @@ def participant_to_dict(p: RpSessionParticipant) -> dict:
         "participant_id": p.participant_id,
         "user_id": p.user_id,
         "role": p.role,
+        "is_ready": bool(p.is_ready),
         "login": user.login if user else None,
         "nickname": display_name(user) if user else None,
     }

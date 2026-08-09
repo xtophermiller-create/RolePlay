@@ -23,6 +23,7 @@ class RpSessionParticipant(db.Model):
     )
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False, index=True)
     role = db.Column(db.String(16), nullable=False, default=ROLE_OBSERVER)
+    is_ready = db.Column(db.Boolean, nullable=False, default=False)
 
     session = db.relationship("RpSession", back_populates="participants")
 

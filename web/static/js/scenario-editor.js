@@ -1,29 +1,11 @@
 /**
- * Редактор сценария: Role 1 / Role 2 + TipTap body + метка наблюдателя + autosave.
+ * Редактор сценария: Role 1 / Role 2 + TipTap body + autosave.
+ * Формат v2: только actor1/actor2 (без observer / fields / callout).
  */
-import { Editor, Extension, Node, mergeAttributes } from "@tiptap/core";
+import { Editor, Extension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
-
-const Callout = Node.create({
-  name: "callout",
-  group: "block",
-  content: "paragraph+",
-  defining: true,
-
-  parseHTML() {
-    return [{ tag: "div[data-callout]" }];
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return [
-      "div",
-      mergeAttributes(HTMLAttributes, { "data-callout": "", class: "rp-callout" }),
-      0,
-    ];
-  },
-});
 
 const DisableTab = Extension.create({
   name: "disableTab",
@@ -54,10 +36,6 @@ if (!root || !docEl || !window.LifeCoreAsync) {
   if (!documentState?.roles) {
     toast("Не удалось загрузить сценарий", "error");
   } else {
-    if (!documentState.roles.observer || typeof documentState.roles.observer !== "object") {
-      documentState.roles.observer = { label: "Наблюдатель" };
-    }
-
     const editors = new Map();
     let saveTimer = null;
     let saveSeq = 0;
@@ -82,6 +60,19 @@ if (!root || !docEl || !window.LifeCoreAsync) {
 
     const collectDocument = () => {
       const next = structuredClone(documentState);
+      // Документ v2 — только две роли-актёра.
+      delete next.roles?.observer;
+      if (next.meta && typeof next.meta === "object") {
+        // title живёт в корне; meta больше не контракт.
+        if (!next.title && typeof next.meta.title === "string") {
+          next.title = next.meta.title;
+        }
+        delete next.meta;
+      }
+      next.format = next.format || "roleplay-scenario";
+      next.version = 2;
+      if (typeof next.title !== "string") next.title = "";
+
       root.querySelectorAll("[data-role-pane]").forEach((pane) => {
         const key = pane.getAttribute("data-role-key");
         if (!key || !next.roles?.[key]) return;
@@ -92,13 +83,6 @@ if (!root || !docEl || !window.LifeCoreAsync) {
         const editor = editors.get(key);
         if (editor) role.body = editor.getJSON();
       });
-      if (!next.roles.observer || typeof next.roles.observer !== "object") {
-        next.roles.observer = { label: "Наблюдатель" };
-      }
-      next.roles.observer.label =
-        root.querySelector("[data-observer-label]")?.value || "";
-      delete next.roles.observer.fields;
-      delete next.roles.observer.tools;
       documentState = next;
       return next;
     };
@@ -132,33 +116,6 @@ if (!root || !docEl || !window.LifeCoreAsync) {
       }
     };
 
-    const setView = (mode) => {
-      const next = mode === "observer" ? "observer" : "roles";
-      root.dataset.view = next;
-      const modeRoot = root.querySelector("[data-editor-mode]");
-      modeRoot?.setAttribute("data-active", next);
-      modeRoot?.querySelectorAll("[data-mode]").forEach((btn) => {
-        const on = btn.getAttribute("data-mode") === next;
-        btn.classList.toggle("is-active", on);
-        btn.setAttribute("aria-selected", on ? "true" : "false");
-      });
-      root.querySelectorAll("[data-editor-view]").forEach((view) => {
-        const match = view.getAttribute("data-editor-view") === next;
-        view.hidden = !match;
-      });
-    };
-
-    root.querySelector("[data-editor-mode]")?.addEventListener("click", (event) => {
-      const btn = event.target.closest("[data-mode]");
-      if (!btn) return;
-      event.preventDefault();
-      setView(btn.getAttribute("data-mode"));
-    });
-
-    root.querySelector("[data-observer-label]")?.addEventListener("input", scheduleSave);
-
-    setView(root.dataset.view || "roles");
-
     const syncToolbar = (pane, editor) => {
       pane.querySelectorAll("[data-cmd]").forEach((btn) => {
         const cmd = btn.getAttribute("data-cmd");
@@ -169,7 +126,6 @@ if (!root || !docEl || !window.LifeCoreAsync) {
         else if (cmd === "heading") active = editor.isActive("heading", { level: 2 });
         else if (cmd === "bulletList") active = editor.isActive("bulletList");
         else if (cmd === "orderedList") active = editor.isActive("orderedList");
-        else if (cmd === "callout") active = editor.isActive("callout");
         btn.classList.toggle("is-active", active);
       });
     };
@@ -193,9 +149,8 @@ if (!root || !docEl || !window.LifeCoreAsync) {
             horizontalRule: false,
           }),
           Underline,
-          Callout,
           Placeholder.configure({
-            placeholder: "Характер, мотивы, что говорить, подсказки…",
+            placeholder: "Характер, мотивы, что говорить…",
           }),
           DisableTab,
         ],
@@ -227,10 +182,6 @@ if (!root || !docEl || !window.LifeCoreAsync) {
         else if (cmd === "heading") chain.toggleHeading({ level: 2 }).run();
         else if (cmd === "bulletList") chain.toggleBulletList().run();
         else if (cmd === "orderedList") chain.toggleOrderedList().run();
-        else if (cmd === "callout") {
-          if (editor.isActive("callout")) chain.lift("callout").run();
-          else chain.wrapIn("callout").run();
-        }
         syncToolbar(pane, editor);
       });
 

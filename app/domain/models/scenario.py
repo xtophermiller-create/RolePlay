@@ -2,6 +2,7 @@
 
 
 from datetime import datetime, timezone
+from app.domain.scenario.constants import FORMAT_VERSION
 from app.extensions import db
 
 
@@ -18,7 +19,7 @@ class Scenario(db.Model):
     title = db.Column(db.String(255), nullable=False)
     file_name = db.Column(db.String(255), unique=True, nullable=False)
 
-    format_version = db.Column(db.Integer, nullable=False, default=1)
+    format_version = db.Column(db.Integer, nullable=False, default=FORMAT_VERSION)
 
     created_at = db.Column(db.DateTime, nullable=False, default=_utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=_utcnow, onupdate=_utcnow)

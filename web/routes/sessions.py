@@ -17,7 +17,6 @@ from app.auth_utils import is_guest_session, login_required, registered_required
 from app.domain.models.rp_session import STATUS_CANCELLED, STATUS_LOBBY
 from app.services import sessions as sessions_service
 from app.services.scenarios import list_scenarios
-from app.services.sessions import invitations as invites_service
 from app.services.sessions import participants as participants_service
 from app.services.users import get_user
 from web.routes.profile import avatar_url, default_avatar_url
@@ -39,18 +38,13 @@ _ERRORS = {
     "session_closed": ("Сессия закрыта", 400),
     "session_full": ("В сессии слишком много участников", 400),
     "host_cannot_leave": ("Хост не может выйти — отмените сессию", 400),
+    "cannot_leave_active": ("Нельзя выйти из активной сессии", 400),
     "not_participant": ("Вы не в этой сессии", 403),
     "invalid_role": ("Неизвестная роль", 400),
     "role_taken": ("Роль уже занята", 409),
     "roles_not_ready": ("Нужно по одному игроку в роли 1 и роли 2", 400),
     "not_started": ("Сессия ещё не запущена", 400),
     "forbidden": ("Нет прав на это действие", 403),
-    "score_failed": ("Не удалось посчитать оценки", 400),
-    "empty_handle": ("Укажите nickname или login", 400),
-    "cannot_invite_self": ("Нельзя пригласить себя", 400),
-    "already_joined": ("Пользователь уже в сессии", 400),
-    "invite_used": ("Приглашение уже использовано", 400),
-    "invite_expired": ("Приглашение истекло", 410),
     "empty_code": ("Введите ключ сессии", 400),
     "db_commit_failed": ("Не удалось сохранить", 500),
     "guests_forbidden": ("Гость может только присоединиться к сессии по коду", 403),
@@ -74,7 +68,6 @@ def _session_payload(row) -> dict:
 
 
 def _fallback_home():
-    """Куда вести, если сессия недоступна: гость → join, иначе home."""
     if is_guest_session():
         return url_for("sessions.join_page")
     return url_for("home.index")
@@ -89,7 +82,7 @@ def _role_labels(row) -> dict:
     return {
         "actor1": (roles.get("actor1") or {}).get("label") or "Роль 1",
         "actor2": (roles.get("actor2") or {}).get("label") or "Роль 2",
-        "observer": (roles.get("observer") or {}).get("label") or "Наблюдатель",
+        "observer": "Наблюдатель",
     }
 
 
@@ -122,20 +115,11 @@ def pick_scenario():
 @login_required
 def join_page():
     guest = is_guest_session()
-    invites = [] if guest else invites_service.list_incoming(session["user_id"])
     return render_template(
         "session_join.html",
         is_guest=guest,
-        invites=[invites_service.invitation_to_dict(i) for i in invites],
         api={
             "join": url_for("sessions.api_join"),
-            "invites": url_for("sessions.api_list_invites"),
-            "accept": url_for("sessions.api_accept_invite", invite_id=0).replace(
-                "/0/", "/{id}/"
-            ),
-            "decline": url_for("sessions.api_decline_invite", invite_id=0).replace(
-                "/0/", "/{id}/"
-            ),
             "lobby": url_for("sessions.lobby", session_id=0).replace("/0", "/{id}"),
             "logout": url_for("auth.logout"),
         },
@@ -167,8 +151,6 @@ def lobby(session_id: int):
         api={
             "get": url_for("sessions.api_get", session_id=session_id),
             "ping": url_for("sessions.api_ping", session_id=session_id),
-            "away": url_for("sessions.api_away", session_id=session_id),
-            "invite": url_for("sessions.api_invite", session_id=session_id),
             "role": url_for("sessions.api_choose_role", session_id=session_id),
             "start": url_for("sessions.api_start", session_id=session_id),
             "play_page": url_for("sessions.play", session_id=session_id),
@@ -183,7 +165,6 @@ def lobby(session_id: int):
 @bp.get("/<int:session_id>/play")
 @login_required
 def play(session_id: int):
-    """Экран активного боя (после «Начать»)."""
     row = sessions_service.get_session(session_id)
     user_id = session["user_id"]
     if not row or not _can_view(row, user_id):
@@ -210,7 +191,6 @@ def play(session_id: int):
         api={
             "play": url_for("sessions.api_play", session_id=session_id),
             "ping": url_for("sessions.api_ping", session_id=session_id),
-            "away": url_for("sessions.api_away", session_id=session_id),
             "ready": url_for("sessions.api_ready", session_id=session_id),
             "complete": url_for("sessions.api_complete", session_id=session_id),
             "home": _fallback_home(),
@@ -246,7 +226,6 @@ def api_create():
 @bp.post("/api/join")
 @login_required
 def api_join():
-    participants_service.prune_all_stale_sessions()
     data = request.get_json(silent=True) or {}
     code = (data.get("code") or "").strip()
     if not code:
@@ -269,7 +248,6 @@ def api_join():
 @bp.get("/api/<int:session_id>")
 @login_required
 def api_get(session_id: int):
-    participants_service.prune_all_stale_sessions()
     row = sessions_service.get_session(session_id)
     if not row:
         return _err("not_found")
@@ -287,7 +265,7 @@ def api_get(session_id: int):
 @bp.post("/api/<int:session_id>/ping")
 @login_required
 def api_ping(session_id: int):
-    """Heartbeat открытого лобби — без ping участник вылетает по таймауту."""
+    """Обновить снимок лобби/боя (без presence-таймеров)."""
     result = participants_service.heartbeat(session_id, session["user_id"])
     if not result:
         return _err(result.error)
@@ -299,66 +277,6 @@ def api_ping(session_id: int):
             "free_roles": participants_service.free_roles(session_id),
         }
     )
-
-
-@bp.post("/api/<int:session_id>/away")
-@login_required
-def api_away(session_id: int):
-    """Закрытие вкладки: сразу снять presence (хост → cancel лобби)."""
-    result = participants_service.mark_away(session_id, session["user_id"])
-    if not result:
-        return _err(result.error)
-    return jsonify({"ok": True})
-
-
-@bp.post("/api/<int:session_id>/invite")
-@registered_required
-def api_invite(session_id: int):
-    data = request.get_json(silent=True) or {}
-    result = invites_service.create_invitation(
-        session_id, session["user_id"], data.get("handle", "")
-    )
-    if not result:
-        return _err(result.error)
-    return jsonify({"ok": True, "invite": invites_service.invitation_to_dict(result.value)})
-
-
-@bp.get("/api/invites")
-@registered_required
-def api_list_invites():
-    participants_service.prune_all_stale_sessions()
-    rows = invites_service.list_incoming(session["user_id"])
-    return jsonify(
-        {
-            "ok": True,
-            "invites": [invites_service.invitation_to_dict(i) for i in rows],
-        }
-    )
-
-
-@bp.post("/api/invites/<int:invite_id>/accept")
-@registered_required
-def api_accept_invite(invite_id: int):
-    result = invites_service.accept_invitation(invite_id, session["user_id"])
-    if not result:
-        return _err(result.error)
-    row = result.value
-    return jsonify(
-        {
-            "ok": True,
-            "session": _session_payload(row),
-            "lobby_url": url_for("sessions.lobby", session_id=row.session_id),
-        }
-    )
-
-
-@bp.post("/api/invites/<int:invite_id>/decline")
-@registered_required
-def api_decline_invite(invite_id: int):
-    result = invites_service.decline_invitation(invite_id, session["user_id"])
-    if not result:
-        return _err(result.error)
-    return jsonify({"ok": True})
 
 
 @bp.post("/api/<int:session_id>/role")
@@ -395,30 +313,9 @@ def api_start(session_id: int):
     )
 
 
-@bp.post("/api/<int:session_id>/ready")
-@login_required
-def api_ready(session_id: int):
-    """Actor1/Actor2: готовы к отыгрышу (этап 1 → 2)."""
-    result = participants_service.mark_ready(session_id, session["user_id"])
-    if not result:
-        return _err(result.error)
-    return jsonify(
-        {
-            "ok": True,
-            "session": _session_payload(result.value),
-            "actors_ready": participants_service.actors_ready(session_id),
-        }
-    )
-
-
 @bp.get("/api/<int:session_id>/play")
 @login_required
 def api_play(session_id: int):
-    """
-    Экран боя: полный document + my_role.
-    UI сам фильтрует отрисовку; observer показывает actor1+actor2.
-    """
-    participants_service.prune_all_stale_sessions()
     result = sessions_service.play_payload(session_id, session["user_id"])
     if not result:
         return _err(result.error)
@@ -427,42 +324,28 @@ def api_play(session_id: int):
     return jsonify({"ok": True, **payload})
 
 
+@bp.post("/api/<int:session_id>/ready")
+@login_required
+def api_ready(session_id: int):
+    """Актёр подтверждает готовность (started → ready, когда оба готовы)."""
+    result = participants_service.mark_ready(session_id, session["user_id"])
+    if not result:
+        return _err(result.error)
+    row = result.value
+    return jsonify(
+        {
+            "ok": True,
+            "session": _session_payload(row),
+            "actors_ready": sessions_service.actors_ready(session_id),
+            "my_ready": True,
+        }
+    )
+
+
 @bp.post("/api/<int:session_id>/complete")
 @registered_required
 def api_complete(session_id: int):
-    """Успешное завершение боя (наблюдатель или хост). Оценок больше нет."""
-    result = sessions_service.complete_session(session_id, session["user_id"])
-    if not result:
-        return _err(result.error)
-    entry = sessions_service.history.history_entry(result.value)
-    _enrich_participants(entry)
-    return jsonify({"ok": True, "history": entry})
-
-
-@bp.get("/api/history")
-@registered_required
-def api_history_list():
-    try:
-        limit = int(request.args.get("limit", 50))
-    except (TypeError, ValueError):
-        limit = 50
-    rows = sessions_service.list_history(session["user_id"], limit=limit)
-    return jsonify({"ok": True, "history": rows})
-
-
-@bp.get("/api/history/<int:session_id>")
-@registered_required
-def api_history_item(session_id: int):
-    result = sessions_service.get_history_item(session_id, session["user_id"])
-    if not result:
-        return _err(result.error)
-    return jsonify({"ok": True, "history": result.value})
-
-
-@bp.post("/api/<int:session_id>/finish")
-@registered_required
-def api_finish(session_id: int):
-    """Устаревший finish. Для боя с историей используйте /complete."""
+    """Завершить бой (хост)."""
     result = sessions_service.finish_session(session_id, session["user_id"])
     if not result:
         return _err(result.error)

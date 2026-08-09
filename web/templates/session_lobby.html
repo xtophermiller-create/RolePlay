@@ -2,7 +2,7 @@
 {% block title %}{{ session_data.scenario_title or "Сессия" }} — лобби{% endblock %}
 {% block body_class %}app-page app-page--session-lobby{% endblock %}
 {% block app_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='9') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='11') }}">
 {% endblock %}
 {% block app_content %}
 <section
@@ -16,8 +16,6 @@
   data-crown-url="{{ crown_url }}"
   data-api-get="{{ api['get'] }}"
   data-api-ping="{{ api.ping }}"
-  data-api-away="{{ api.away }}"
-  data-api-invite="{{ api.invite }}"
   data-api-role="{{ api.role }}"
   data-api-start="{{ api.start }}"
   data-api-play-page="{{ api.play_page }}"
@@ -75,26 +73,6 @@
     <!-- роли: рендер JS -->
   </div>
 
-  {% if is_host and not is_guest %}
-  <div class="session-lobby__invite" data-lobby-invite>
-    <label class="session-lobby__invite-label" for="session-invite-handle">Пригласить</label>
-    <div class="session-lobby__invite-row">
-      <input
-        id="session-invite-handle"
-        class="lc-field session-lobby__invite-input"
-        type="text"
-        data-lobby-invite-handle
-        placeholder="Nickname или login"
-        maxlength="64"
-        autocomplete="off"
-        spellcheck="false"
-      >
-      <button type="button" class="btn btn--accent btn--pill" data-lobby-invite-send>Отправить</button>
-    </div>
-    <p class="session-lobby__invite-hint">Приглашение живёт около 30 секунд</p>
-  </div>
-  {% endif %}
-
   <div class="session-lobby__actions">
     {% if is_host and not is_guest %}
     <button type="button" class="btn btn--pill" data-lobby-cancel>Отменить сессию</button>
@@ -112,5 +90,5 @@
 }|tojson }}</script>
 {% endblock %}
 {% block app_scripts %}
-<script src="{{ url_for('static', filename='js/session-lobby.js', v='10') }}"></script>
+<script src="{{ url_for('static', filename='js/session-lobby.js', v='12') }}"></script>
 {% endblock %}

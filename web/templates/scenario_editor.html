@@ -2,17 +2,15 @@
 {% block title %}{{ scenario.title or "Сценарий" }} — редактор{% endblock %}
 {% block body_class %}app-page app-page--editor{% endblock %}
 {% block app_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/scenario-editor.css', v='11') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scenario-editor.css', v='12') }}">
 {% endblock %}
 {% block app_content %}
-{% set observer = document.roles.observer %}
 <section
   class="scenario-editor"
   data-scenario-editor
   data-scenario-id="{{ scenario.scenario_id }}"
   data-api-save="{{ api.save }}"
   data-api-list="{{ api.list }}"
-  data-view="roles"
 >
   <header class="scenario-editor__top">
     <div class="scenario-editor__top-lead">
@@ -35,31 +33,13 @@
       </div>
     </div>
 
-    <div class="scenario-editor__mode" data-editor-mode role="tablist" aria-label="Раздел редактора">
-      <span class="scenario-editor__mode-thumb" data-mode-thumb aria-hidden="true"></span>
-      <button
-        type="button"
-        class="scenario-editor__mode-btn is-active"
-        role="tab"
-        aria-selected="true"
-        data-mode="roles"
-      >Роли</button>
-      <button
-        type="button"
-        class="scenario-editor__mode-btn"
-        role="tab"
-        aria-selected="false"
-        data-mode="observer"
-      >Наблюдатель</button>
-    </div>
-
     <p class="scenario-editor__status" data-editor-status aria-live="polite">
       <span class="scenario-editor__status-dot" aria-hidden="true"></span>
       <span data-editor-status-text>Сохранено</span>
     </p>
   </header>
 
-  <div class="scenario-editor__panes" data-editor-view="roles">
+  <div class="scenario-editor__panes">
     {% for key, badge, index in [("actor1", "Роль 1", "01"), ("actor2", "Роль 2", "02")] %}
     {% set role = document.roles[key] %}
     <section class="role-pane" data-role-pane data-role-key="{{ key }}" style="--pane-delay: {{ loop.index0 * 60 }}ms">
@@ -73,7 +53,7 @@
             data-role-label
             value="{{ role.label or '' }}"
             placeholder="Имя роли"
-            maxlength="120"
+            maxlength="64"
             autocomplete="off"
             spellcheck="false"
             aria-label="Имя {{ badge }}"
@@ -90,7 +70,7 @@
             data-role-goal
             rows="3"
             placeholder="Чего хочет добиться эта роль"
-            maxlength="2000"
+            maxlength="1024"
           >{{ role.goal or '' }}</textarea>
         </label>
 
@@ -102,7 +82,7 @@
             data-role-context
             rows="3"
             placeholder="Что было «до» этой ролевки"
-            maxlength="8000"
+            maxlength="1024"
           >{{ role.context or '' }}</textarea>
         </label>
       </div>
@@ -119,7 +99,6 @@
             <button type="button" class="role-pane__tool" data-cmd="heading" title="Заголовок" aria-label="Заголовок">H</button>
             <button type="button" class="role-pane__tool" data-cmd="bulletList" title="Список" aria-label="Маркированный список">•</button>
             <button type="button" class="role-pane__tool" data-cmd="orderedList" title="Нумерованный список" aria-label="Нумерованный список">1.</button>
-            <button type="button" class="role-pane__tool" data-cmd="callout" title="Подсказка" aria-label="Блок подсказки">!</button>
           </div>
         </div>
         <div class="role-pane__editor" data-role-editor></div>
@@ -127,34 +106,10 @@
     </section>
     {% endfor %}
   </div>
-
-  <section class="observer-pane" data-editor-view="observer" data-observer-pane hidden>
-    <header class="observer-pane__head">
-      <span class="observer-pane__index" aria-hidden="true">03</span>
-      <div class="observer-pane__identity">
-        <span class="role-pane__badge">Наблюдатель</span>
-        <input
-          class="role-pane__label"
-          type="text"
-          data-observer-label
-          value="{{ observer.label or '' }}"
-          placeholder="Название роли"
-          maxlength="120"
-          autocomplete="off"
-          spellcheck="false"
-          aria-label="Название роли наблюдателя"
-        >
-      </div>
-    </header>
-    <p class="observer-pane__lead">
-      Наблюдатели видят брифинги обеих ролей. Оценочной формы больше нет — в лобби
-      наблюдателей может быть сколько угодно.
-    </p>
-  </section>
 </section>
 
 <script id="scenario-document" type="application/json">{{ document|tojson }}</script>
 {% endblock %}
 {% block app_scripts %}
-<script type="module" src="{{ url_for('static', filename='dist/scenario-editor.bundle.js', v='2') }}"></script>
+<script type="module" src="{{ url_for('static', filename='dist/scenario-editor.bundle.js', v='3') }}"></script>
 {% endblock %}

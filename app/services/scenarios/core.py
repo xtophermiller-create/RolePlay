@@ -9,6 +9,7 @@ from typing import Any
 from app.domain.models import Scenario, User
 from app.domain.scenario.constants import FORMAT_VERSION
 from app.domain.scenario.document import (
+    coerce_document,
     document_title,
     empty_document,
     validate_document,
@@ -52,7 +53,7 @@ def create_scenario(
     if document is None:
         doc = empty_document(title=title)
     else:
-        doc = document
+        doc = coerce_document(document)
         if title:
             doc["title"] = title.strip()
 
@@ -102,6 +103,7 @@ def save_document(
     if not row:
         return Err("not_found")
 
+    document = coerce_document(document)
     if validate_document(document):
         return Err("invalid_document")
 

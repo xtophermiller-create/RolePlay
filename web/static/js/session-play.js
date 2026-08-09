@@ -16,7 +16,6 @@
 
   const playUrl = root.getAttribute("data-api-play") || "";
   const pingUrl = root.getAttribute("data-api-ping") || "";
-  const awayUrl = root.getAttribute("data-api-away") || "";
   const readyUrl = root.getAttribute("data-api-ready") || "";
   const completeUrl = root.getAttribute("data-api-complete") || "";
   const homeUrl = root.getAttribute("data-api-home") || "/home/";
@@ -65,37 +64,6 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
 
-  const csrfToken = () =>
-    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-
-  /** Жёсткий уход: страница умирает (навигация / закрытие). Больше не пингуем. */
-  const postKeepalive = (url) => {
-    if (!url || departed) return;
-    departed = true;
-    const token = csrfToken();
-    try {
-      fetch(url, {
-        method: "POST",
-        credentials: "same-origin",
-        keepalive: true,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-CSRFToken": token,
-        },
-        body: "{}",
-      });
-    } catch (_) {
-      /* ignore */
-    }
-    try {
-      const body = new Blob([JSON.stringify({})], { type: "application/json" });
-      navigator.sendBeacon?.(url, body);
-    } catch (_) {
-      /* ignore */
-    }
-  };
-
   const goHome = (message = "", kind = "info") => {
     if (departed && !finishing) return;
     departed = true;
@@ -104,13 +72,6 @@
       location.href = homeUrl;
     }, 700);
   };
-
-  backLink?.addEventListener("click", (event) => {
-    event.preventDefault();
-    if (departed || finishing) return;
-    postKeepalive(awayUrl);
-    location.href = homeUrl;
-  });
 
   /** TipTap JSON → простой HTML (только безопасные узлы). */
   const renderTipTap = (node) => {
@@ -149,22 +110,31 @@
         return `<blockquote>${kids}</blockquote>`;
       case "codeBlock":
         return `<pre><code>${kids}</code></pre>`;
-      case "callout":
-        // В редакторе — рамка; для ролей — свёрнутая «Подсказка».
+      case "section": {
+        const title = escapeHtml(
+          (node.attrs?.title || "").trim() || "Секция"
+        );
         return `
           <details class="play-hint">
             <summary class="play-hint__toggle">
-              <span class="play-hint__icon" aria-hidden="true">!</span>
-              <span class="play-hint__label">Подсказка</span>
+              <span class="play-hint__label">${title}</span>
               <span class="play-hint__chevron" aria-hidden="true"></span>
             </summary>
             <div class="play-hint__body">${kids}</div>
           </details>
         `;
+      }
+      case "image": {
+        const src = escapeHtml((node.attrs?.src || "").trim());
+        if (!src) return "";
+        const alt = escapeHtml((node.attrs?.alt || "").trim());
+        const title = escapeHtml((node.attrs?.title || "").trim());
+        return `<img class="play-image" src="${src}" alt="${alt}"${
+          title ? ` title="${title}"` : ""
+        } loading="lazy">`;
+      }
       case "hardBreak":
         return "<br>";
-      case "horizontalRule":
-        return "<hr>";
       default:
         return kids;
     }
@@ -177,6 +147,9 @@
 
   const participants = () => state.session?.participants || [];
 
+  const isObserver = () => state.my_role === "observer";
+  const isActor = () => state.my_role === "actor1" || state.my_role === "actor2";
+
   const actorReadyMap = () => {
     const map = { actor1: false, actor2: false };
     for (const p of participants()) {
@@ -187,12 +160,10 @@
     return map;
   };
 
-  const isObserver = () => state.my_role === "observer";
-  const isActor = () => state.my_role === "actor1" || state.my_role === "actor2";
-
   const stage = () => {
     if (state.history || state.session?.status === "finished") return "results";
-    if (state.actors_ready) return "play";
+    const status = state.session?.status;
+    if (status === "ready" || state.actors_ready) return "play";
     return "brief";
   };
 
@@ -325,6 +296,7 @@
       state.actors_ready ? "1" : "0",
       readyMap.actor1 ? "1" : "0",
       readyMap.actor2 ? "1" : "0",
+      isGuest ? "g" : "u",
     ].join("|");
   };
 
@@ -389,7 +361,8 @@
       btn.className = "btn btn--accent btn--pill";
       btn.textContent = "Завершить ролевку";
       btn.disabled = s !== "play";
-      btn.title = s === "play" ? "Завершить сессию" : "Ждём готовности ролей 1 и 2";
+      btn.title =
+        s === "play" ? "Завершить сессию" : "Ждём готовности ролей 1 и 2";
       btn.addEventListener("click", () => {
         if (btn.disabled) return;
         window.LifeCorePopup?.open(completePopup);
@@ -451,7 +424,8 @@
     if (!session) return false;
     state.session = session;
     const ready = actorReadyMap();
-    state.actors_ready = Boolean(ready.actor1 && ready.actor2);
+    state.actors_ready =
+      session.status === "ready" || Boolean(ready.actor1 && ready.actor2);
     if (state.my_role && ready[state.my_role]) state.my_ready = true;
 
     if (session.status === "cancelled") {
@@ -460,9 +434,6 @@
     }
     if (session.status === "finished" && !state.history) {
       state.history = {
-        actor1_percent: session.actor1_percent,
-        actor2_percent: session.actor2_percent,
-        overall_percent: session.overall_percent,
         participants: session.participants,
         scenario_title: session.scenario_title,
       };
@@ -544,19 +515,19 @@
     try {
       const data = await postJson(completeUrl, {});
       window.LifeCorePopup?.close(completePopup);
-      state.history = data.history || null;
-      state.session = {
+      state.session = data.session || {
         ...(state.session || {}),
         status: "finished",
-        actor1_percent: data.history?.actor1_percent,
-        actor2_percent: data.history?.actor2_percent,
-        overall_percent: data.history?.overall_percent,
+      };
+      state.history = {
+        participants: state.session.participants || participants(),
+        scenario_title: state.session.scenario_title,
       };
       departed = true;
       paintedBodyKey = "";
       paintedActionsKey = "";
       render({ force: true });
-      toast("Результат сохранён", "success");
+      toast("Сессия завершена", "success");
     } catch (err) {
       finishing = false;
       if (confirmBtn) confirmBtn.disabled = false;
@@ -575,23 +546,11 @@
     ?.querySelector("[data-play-complete-confirm]")
     ?.addEventListener("click", () => void confirmComplete());
 
-  /**
-   * Реальный уход: закрытие вкладки / переход на другой URL.
-   * visibilitychange намеренно не трогаем — браузер может скрыть вкладку
-   * при Alt+Tab / сворачивании, а ping в фоне throttling'ится → ложный away.
-   */
   backLink?.addEventListener("click", (event) => {
     event.preventDefault();
-    postKeepalive(awayUrl);
+    if (departed || finishing) return;
+    departed = true;
     location.href = homeUrl;
-  });
-
-  // Реальный уход со страницы: другой URL сайта или закрытие вкладки/браузера.
-  window.addEventListener("pagehide", () => {
-    if (!finishing) postKeepalive(awayUrl);
-  });
-  window.addEventListener("beforeunload", () => {
-    if (!finishing) postKeepalive(awayUrl);
   });
 
   void refresh().then(() => {

@@ -149,6 +149,6 @@ def api_save(scenario_id):
         {
             "ok": True,
             "scenario": _scenario_payload(row),
-            "updated_at": (doc.get("meta") or {}).get("updatedAt"),
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
         }
     )

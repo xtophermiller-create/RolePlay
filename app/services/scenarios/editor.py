@@ -14,7 +14,7 @@ from typing import Any
 from app.domain.models import Scenario
 from app.domain.scenario import constants as C
 from app.domain.scenario import roles as role_ops
-from app.domain.scenario.document import validate_document
+from app.domain.scenario.document import coerce_document, validate_document
 from app.services.result import Err, Ok, Result
 from app.services.scenarios import core as scenarios_core
 
@@ -57,6 +57,7 @@ def parse_bytes(raw: bytes | str) -> Result[dict[str, Any]]:
         data = json.loads(text)
     except (UnicodeDecodeError, json.JSONDecodeError):
         return Err("invalid_json")
+    data = coerce_document(data)
     if validate_document(data):
         return Err("invalid_document")
     return Ok(data)
