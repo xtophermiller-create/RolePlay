@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block body_class %}app-page{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='4') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/datetime-fields.css', v='3') }}">
+{% block app_head %}{% endblock %}
+{% endblock %}
+{% block nav %}{% endblock %}
+{% block flashes %}{% endblock %}
+{% block content %}
+<main class="app-main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="app-flashes">
+        {% for category, message in messages %}
+          <p class="app-flash{% if category == 'success' %} app-flash--success{% endif %}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block app_content %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='js/async-ui.js', v='4') }}"></script>
+<script src="{{ url_for('static', filename='js/popup.js', v='3') }}"></script>
+{% block app_scripts %}{% endblock %}
+{% endblock %}

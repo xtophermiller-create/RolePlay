@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Roleplay Trainer{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand/favicon.ico') }}" sizes="any">
+  <link rel="icon" href="{{ url_for('static', filename='brand/favicon.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/favicon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css', v='2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui-select.css', v='2') }}">
+  {% block head %}{% endblock %}
+  {% block styles %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" data-filter-nav="{% block filter_nav %}{{ request.endpoint or '' }}{% endblock %}">
+  {% block nav %}{% endblock %}
+
+  {% block flashes %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="app-flashes">
+        {% for category, message in messages %}
+          <p class="app-flash{% if category == 'success' %} app-flash--success{% endif %}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% endblock %}
+
+  {% block content %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/base.js', v='1') }}"></script>
+</body>
+</html>

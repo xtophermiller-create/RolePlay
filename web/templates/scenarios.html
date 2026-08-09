@@ -1,0 +1,145 @@
+{% extends "app.html" %}
+{% block title %}Мои сценарии — Roleplay Trainer{% endblock %}
+{% block body_class %}app-page app-page--scenarios{% endblock %}
+{% block app_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios.css', v='6') }}">
+{% endblock %}
+{% block app_content %}
+<section
+  class="scenarios"
+  data-scenarios
+  data-api-create="{{ api.create }}"
+  data-api-rename="{{ api.rename }}"
+  data-api-delete="{{ api.delete }}"
+  data-api-edit="{{ api.edit }}"
+  data-avatar-url="{{ url_for('static', filename='icons/ui/scenario-avatar.svg') }}"
+>
+  <header class="scenarios__top">
+    <a
+      class="scenarios__back"
+      href="{{ url_for('home.index') }}"
+      title="Назад"
+      aria-label="Назад в меню"
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M15.4 5.4a1 1 0 0 1 0 1.4L10.2 12l5.2 5.2a1 1 0 1 1-1.4 1.4l-5.9-5.9a1 1 0 0 1 0-1.4l5.9-5.9a1 1 0 0 1 1.4 0z"
+        />
+      </svg>
+    </a>
+    <div class="scenarios__heading">
+      <p class="scenarios__eyebrow">Библиотека</p>
+      <h1 class="scenarios__title">Мои сценарии</h1>
+    </div>
+    <button type="button" class="btn btn--accent btn--pill scenarios__create" data-scenario-create-open>
+      Создать
+    </button>
+  </header>
+
+  <div class="scenarios-grid" data-scenarios-grid>
+    {% for s in scenarios %}
+    <article
+      class="scenario-card"
+      data-scenario-card
+      data-scenario-id="{{ s.scenario_id }}"
+      style="--card-delay: {{ (loop.index0 % 12) * 40 }}ms"
+    >
+      <div class="scenario-card__cover">
+        <img
+          class="scenario-card__avatar"
+          src="{{ url_for('static', filename='icons/ui/scenario-avatar.svg') }}"
+          alt=""
+          width="200"
+          height="200"
+          draggable="false"
+        >
+        <button
+          type="button"
+          class="scenario-card__delete"
+          data-scenario-delete
+          title="Удалить сценарий"
+          aria-label="Удалить сценарий"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9zM7 9h2v10H7V9z"/>
+          </svg>
+        </button>
+      </div>
+      <button
+        type="button"
+        class="scenario-card__title"
+        data-scenario-title
+        title="Изменить название"
+      ><span class="scenario-card__title-text">{{ s.title or "Без названия" }}</span></button>
+    </article>
+    {% else %}
+    <div class="scenarios-empty" data-scenarios-empty>
+      <p class="scenarios-empty__title">Пока пусто</p>
+      <p class="scenarios-empty__text">Создай первый сценарий — и библиотека оживёт.</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="scenario-create-popup lc-popup lc-popup--card" id="scenario-create-popup" data-scenario-create-popup hidden>
+  <div class="scenario-create-popup__backdrop" data-scenario-create-close></div>
+  <div
+    class="scenario-create-popup__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="scenario-create-title"
+  >
+    <button type="button" class="scenario-create-popup__close" data-scenario-create-close aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path fill="currentColor" d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 0 0-1.4 1.4l4.9 4.9-4.9 4.9a1 1 0 1 0 1.4 1.4l4.9-4.9 4.9 4.9a1 1 0 0 0 1.4-1.4L13.4 12l4.9-4.9a1 1 0 0 0 0-1.4z"/>
+      </svg>
+    </button>
+    <p class="scenario-create-popup__eyebrow">Новый сценарий</p>
+    <h2 class="scenario-create-popup__heading" id="scenario-create-title">Дадим ему имя</h2>
+    <p class="scenario-create-popup__lead" data-scenario-create-splash></p>
+    <input
+      class="lc-field scenario-create-popup__input"
+      type="text"
+      data-scenario-create-input
+      placeholder="Название"
+      maxlength="200"
+      autocomplete="off"
+      spellcheck="false"
+    >
+    <div class="scenario-create-popup__actions">
+      <button type="button" class="btn btn--pill" data-scenario-create-empty>
+        Создать пустым
+      </button>
+      <button type="button" class="btn btn--accent btn--pill" data-scenario-create-continue>
+        Продолжить
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="scenario-delete-popup lc-popup lc-popup--card" data-scenario-delete-popup hidden>
+  <div class="scenario-delete-popup__backdrop" data-scenario-delete-close></div>
+  <div
+    class="scenario-delete-popup__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="scenario-delete-title"
+  >
+    <p class="scenario-delete-popup__eyebrow">Удаление</p>
+    <h2 class="scenario-delete-popup__heading" id="scenario-delete-title">Удалить сценарий?</h2>
+    <p class="scenario-delete-popup__lead">
+      <span data-scenario-delete-name></span>
+      исчезнет без возможности восстановления.
+    </p>
+    <div class="scenario-delete-popup__actions">
+      <button type="button" class="btn btn--pill" data-scenario-delete-close>Отмена</button>
+      <button type="button" class="btn btn--danger btn--pill" data-scenario-delete-confirm>Удалить</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block app_scripts %}
+<script src="{{ url_for('static', filename='js/scenarios.js', v='8') }}"></script>
+{% endblock %}

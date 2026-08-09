@@ -1,0 +1,239 @@
+/* Auth — тот же стандарт качества, что у редактора */
+
+body.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background:
+    radial-gradient(1000px 480px at 50% -8%, rgba(255, 255, 255, 0.035), transparent 62%),
+    var(--color-bg);
+}
+
+.auth {
+  --auth-field-width: 300px;
+
+  position: relative;
+  width: 100%;
+  max-width: var(--auth-field-width);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: auth-in 0.38s var(--ease) both;
+}
+
+.auth__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.auth__logo {
+  display: block;
+  width: auto;
+  height: 40px;
+  max-width: 70px;
+  object-fit: contain;
+  opacity: 0.92;
+}
+
+.auth__eyebrow {
+  margin: 0;
+  color: var(--color-whitetext);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.auth__title {
+  margin: 0 0 16px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-accent);
+  text-align: center;
+}
+
+.auth__intro {
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.auth__emoji {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.auth__heading {
+  margin: 0 0 10px;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-accent);
+}
+
+.auth__lead {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--color-accent);
+  opacity: 0.72;
+}
+
+.auth__flash-slot {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  right: 0;
+  min-height: 1.1em;
+  pointer-events: none;
+}
+
+.auth__flash {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--color-danger);
+  text-align: center;
+}
+
+.auth__flash--success {
+  color: var(--color-success);
+}
+
+.auth__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.auth__form input,
+.auth__form textarea {
+  width: 100%;
+  margin: 0;
+  padding: var(--control-pad-y) var(--control-pad-x);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(33, 33, 33, 0.72);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--control-font-size);
+  outline: none;
+  resize: vertical;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.auth__form input {
+  text-align: center;
+  min-height: var(--control-height);
+}
+
+.auth__form textarea {
+  min-height: 120px;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.auth__form input::placeholder,
+.auth__form textarea::placeholder {
+  color: var(--color-whitetext);
+  opacity: 1;
+}
+
+.auth__form input:hover,
+.auth__form textarea:hover {
+  border-color: var(--color-border-hover);
+}
+
+.auth__form input:focus,
+.auth__form textarea:focus {
+  border-color: var(--color-border-hover);
+  background: var(--color-field);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.auth__form input.auth__input--invalid,
+.auth__form input.auth__input--invalid:focus,
+.auth__form textarea.auth__input--invalid,
+.auth__form textarea.auth__input--invalid:focus {
+  border-color: var(--color-danger);
+}
+
+.auth__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.auth__switch {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-whitetext);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.auth__switch:hover {
+  color: var(--color-accent);
+}
+
+.auth__submit {
+  margin: 0;
+  min-width: 7.5rem;
+}
+
+.auth__guest {
+  margin: 14px 0 0;
+  padding: 0;
+  border: none;
+}
+
+.auth__guest-btn {
+  width: 100%;
+  margin: 0;
+  min-height: var(--control-height);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-accent);
+}
+
+.auth__guest-btn:hover {
+  border-color: var(--color-border-hover);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@keyframes auth-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth {
+    animation: none;
+  }
+}

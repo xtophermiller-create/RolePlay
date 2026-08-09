@@ -1,0 +1,541 @@
+/* Мои сценарии — библиотека на уровне редактора */
+
+.app-page--scenarios {
+  background:
+    radial-gradient(1200px 520px at 50% -10%, rgba(255, 255, 255, 0.035), transparent 60%),
+    var(--color-bg);
+}
+
+.app-page--scenarios .app-main {
+  max-width: 1100px;
+  min-height: 100vh;
+  padding: 20px 22px 36px;
+}
+
+.scenarios {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: scenarios-in 0.34s var(--ease) both;
+}
+
+.scenarios__top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+}
+
+.scenarios__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(33, 33, 33, 0.55);
+  color: var(--color-whitetext);
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.scenarios__back:hover {
+  color: var(--color-accent);
+  border-color: var(--color-border-hover);
+  background: var(--color-field);
+}
+
+.scenarios__back:active {
+  transform: scale(0.97);
+}
+
+.scenarios__heading {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scenarios__eyebrow {
+  margin: 0;
+  color: var(--color-whitetext);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scenarios__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenarios__create {
+  min-width: 7.5rem;
+}
+
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 16px;
+}
+
+.scenarios-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 280px;
+  padding: 36px 20px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-panel);
+  background: rgba(33, 33, 33, 0.35);
+  text-align: center;
+}
+
+.scenarios-empty__title {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.scenarios-empty__text {
+  margin: 0;
+  max-width: 26rem;
+  color: var(--color-whitetext);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.scenario-card {
+  --card-delay: 0ms;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  color: inherit;
+  overflow: hidden;
+  animation: scenario-card-in 0.36s var(--ease) both;
+  animation-delay: var(--card-delay);
+  transition:
+    border-color var(--dur-ui) var(--ease),
+    transform var(--dur-ui) var(--ease),
+    box-shadow var(--dur-ui) var(--ease);
+}
+
+.scenario-card:hover {
+  border-color: var(--color-border-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.28);
+}
+
+.scenario-card.is-editing {
+  border-color: var(--color-border-hover);
+  transform: none;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+}
+
+.scenario-card__cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.04), transparent 55%),
+    var(--color-bg);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.scenario-card__delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: rgba(20, 20, 20, 0.55);
+  color: var(--color-whitetext);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.scenario-card:hover .scenario-card__delete,
+.scenario-card__delete:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scenario-card__delete:hover,
+.scenario-card__delete:focus-visible {
+  color: #ff8e8e;
+  border-color: rgba(196, 92, 92, 0.45);
+  background: rgba(33, 20, 20, 0.82);
+}
+
+.scenario-card__delete:active {
+  transform: scale(0.96);
+}
+
+.scenario-card__delete svg {
+  display: block;
+}
+
+@media (hover: none) {
+  .scenario-card__delete {
+    opacity: 0.85;
+    pointer-events: auto;
+  }
+}
+
+.scenario-card__cover::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 36%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.28));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-ui) var(--ease);
+}
+
+.scenario-card:hover .scenario-card__cover::after {
+  opacity: 1;
+}
+
+.scenario-card__avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 20%;
+  box-sizing: border-box;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.68;
+  transition: opacity var(--dur-ui) var(--ease), transform var(--dur-ui) var(--ease);
+}
+
+.scenario-card:hover .scenario-card__avatar {
+  opacity: 0.92;
+  transform: scale(1.03);
+}
+
+.scenario-card__title {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 12px 13px 13px;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  text-align: left;
+  min-height: calc(1.3em * 2 + 25px);
+  cursor: text;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.scenario-card__title:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.scenario-card__title-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.scenario-card__title-input {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 12px 13px 13px;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+  background: var(--color-bg);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  min-height: calc(1.3em * 2 + 25px);
+  outline: none;
+}
+
+/* Create popup */
+
+.scenario-create-popup.lc-popup {
+  z-index: var(--z-popup);
+}
+
+.scenario-create-popup__backdrop {
+  background: var(--backdrop-strong);
+}
+
+.scenario-create-popup__panel {
+  position: relative;
+  margin: 0;
+  padding: 30px 26px 26px;
+  box-shadow: var(--shadow-popup);
+}
+
+.scenario-create-popup__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-whitetext);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.scenario-create-popup__close:hover {
+  color: var(--color-accent);
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.scenario-create-popup__eyebrow {
+  margin: 0 0 6px;
+  color: var(--color-whitetext);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scenario-create-popup__heading {
+  margin: 0 0 10px;
+  padding-right: 28px;
+  color: var(--color-accent);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.scenario-create-popup__lead {
+  margin: 0 0 18px;
+  color: var(--color-whitetext);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre-line;
+  min-height: 3.2em;
+}
+
+.scenario-create-popup__input {
+  text-align: center;
+  min-height: var(--control-height);
+  background: rgba(20, 20, 20, 0.55);
+}
+
+.scenario-create-popup__input:focus {
+  background: var(--color-bg);
+}
+
+.scenario-create-popup__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.scenario-create-popup__actions .btn {
+  flex: 1 1 0;
+  min-height: 40px;
+  font-weight: 600;
+}
+
+/* Delete confirm popup */
+
+.scenario-delete-popup.lc-popup {
+  z-index: var(--z-popup);
+}
+
+.scenario-delete-popup__backdrop {
+  background: var(--backdrop-strong);
+}
+
+.scenario-delete-popup__panel {
+  position: relative;
+  margin: 0;
+  padding: 28px 26px 24px;
+  max-width: 380px;
+  box-shadow: var(--shadow-popup);
+}
+
+.scenario-delete-popup__eyebrow {
+  margin: 0 0 6px;
+  color: var(--color-whitetext);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scenario-delete-popup__heading {
+  margin: 0 0 10px;
+  color: var(--color-accent);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.scenario-delete-popup__lead {
+  margin: 0 0 20px;
+  color: var(--color-whitetext);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.scenario-delete-popup__lead [data-scenario-delete-name] {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.scenario-delete-popup__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scenario-delete-popup__actions .btn {
+  flex: 1 1 0;
+  min-height: 40px;
+  font-weight: 600;
+}
+
+.scenario-delete-popup__actions .btn--danger {
+  background: rgba(196, 92, 92, 0.16);
+  border-color: rgba(196, 92, 92, 0.45);
+}
+
+.scenario-delete-popup__actions .btn--danger:hover {
+  background: rgba(196, 92, 92, 0.28);
+  border-color: rgba(196, 92, 92, 0.65);
+  color: #ffb0b0;
+}
+
+@keyframes scenarios-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scenario-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .app-page--scenarios .app-main {
+    padding: 14px 12px 28px;
+  }
+
+  .scenarios-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .scenarios__title {
+    font-size: 1.15rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .scenario-card__title,
+  .scenario-card__title-input {
+    padding: 10px 11px 11px;
+    font-size: 0.8rem;
+  }
+
+  .scenario-create-popup__actions,
+  .scenario-delete-popup__actions {
+    flex-direction: column-reverse;
+  }
+
+  .scenario-create-popup__actions .btn,
+  .scenario-delete-popup__actions .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scenarios,
+  .scenario-card {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.docker
+storage/db/*
+!storage/db/.gitkeep
+storage/scenarios/*
+!storage/scenarios/.gitkeep
+storage/media/avatars/*
+!storage/media/avatars/.gitkeep
+*.db
+.DS_Store
+.idea/
+node_modules/
+.pytest_cache/

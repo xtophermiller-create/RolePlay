@@ -1,0 +1,14 @@
+{
+  "name": "roleplay-trainer-assets",
+  "private": true,
+  "scripts": {
+    "build": "esbuild web/static/js/scenario-editor.js --bundle --format=esm --minify --sourcemap --outfile=web/static/dist/scenario-editor.bundle.js"
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.29.2",
+    "@tiptap/extension-placeholder": "^3.29.2",
+    "@tiptap/extension-underline": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2",
+    "esbuild": "^0.28.1"
+  }
+}

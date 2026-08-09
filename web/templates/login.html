@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Вход — Roleplay Trainer{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css', v='4') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='4') }}">
+{% endblock %}
+{% block styles %}{% endblock %}
+{% block nav %}{% endblock %}
+{% block flashes %}{% endblock %}
+{% block content %}
+<main class="auth">
+  <div class="auth__brand">
+    <img
+      class="auth__logo"
+      src="{{ url_for('static', filename='brand/RoleplayTrainer.svg') }}"
+      alt=""
+      width="48"
+      height="48"
+      draggable="false"
+    >
+    <p class="auth__eyebrow">Roleplay Trainer</p>
+  </div>
+  <h1 class="auth__title">Вход</h1>
+
+  <form class="auth__form" method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input name="login" type="text" placeholder="Логин" autocomplete="username" required>
+    <input name="password" type="password" placeholder="Пароль" autocomplete="current-password" required>
+    {% if show_turnstile and config.TURNSTILE_SITE_KEY %}
+    <div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>
+    {% endif %}
+    <div class="auth__actions">
+      <a class="auth__switch" href="{{ url_for('auth.register') }}">Регистрация</a>
+      <button class="auth__submit btn btn--accent btn--pill" type="submit">Войти</button>
+    </div>
+  </form>
+
+  <form class="auth__guest" method="post" action="{{ url_for('auth.guest_login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="auth__guest-btn btn btn--pill" type="submit">Войти как гость</button>
+  </form>
+
+  <div class="auth__flash-slot">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <p class="auth__flash{% if category == 'success' %} auth__flash--success{% endif %}">{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+</main>
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% if show_turnstile and config.TURNSTILE_SITE_KEY %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}

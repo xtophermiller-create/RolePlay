@@ -1,0 +1,485 @@
+/* Главное меню — эталонное спокойствие */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.app-page--home {
+  background:
+    radial-gradient(1000px 480px at 50% -8%, rgba(255, 255, 255, 0.035), transparent 62%),
+    var(--color-bg);
+}
+
+.app-page--home .app-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 48px 20px;
+}
+
+.home-menu {
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  animation: home-in 0.38s var(--ease) both;
+}
+
+.home-menu__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.home-menu__logo {
+  display: block;
+  width: auto;
+  height: 42px;
+  max-width: 72px;
+  object-fit: contain;
+  opacity: 0.92;
+}
+
+.home-menu__eyebrow {
+  margin: 0;
+  color: var(--color-whitetext);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.home-menu__identity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 22px;
+}
+
+.home-menu__identity-side,
+.home-menu__account-edit {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+}
+
+.home-menu__avatar {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: 118px;
+  height: 118px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface-panel);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-ui) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-ui) var(--ease);
+}
+
+.home-menu__account-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(33, 33, 33, 0.55);
+  color: var(--color-whitetext);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.home-menu__account-edit:hover {
+  color: var(--color-accent);
+  border-color: var(--color-border-hover);
+  background: var(--color-field);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.home-menu__account-edit:active {
+  transform: scale(0.96);
+}
+
+.home-menu__account-edit-icon {
+  display: block;
+  width: 18px;
+  height: auto;
+  opacity: 0.88;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.home-menu__account-edit:hover .home-menu__account-edit-icon {
+  opacity: 1;
+}
+
+.home-menu__avatar:hover {
+  border-color: var(--color-border-hover);
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+}
+
+.home-menu__avatar:active {
+  transform: scale(0.985);
+}
+
+.home-menu__avatar:disabled,
+.home-menu__avatar.is-busy {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.home-menu__avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.home-menu__avatar-hint {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 10px 0 11px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+  color: var(--color-accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.home-menu__avatar:hover .home-menu__avatar-hint,
+.home-menu__avatar:focus-visible .home-menu__avatar-hint {
+  opacity: 1;
+}
+
+.home-menu__nick {
+  position: relative;
+  margin-bottom: 28px;
+}
+
+.home-menu__nick-input {
+  width: 100%;
+  margin: 0;
+  padding: var(--control-pad-y) var(--control-height);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(33, 33, 33, 0.72);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--control-font-size);
+  text-align: center;
+  outline: none;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.home-menu__nick-input::placeholder {
+  color: var(--color-whitetext);
+  opacity: 1;
+}
+
+.home-menu__nick-input:hover {
+  border-color: var(--color-border-hover);
+}
+
+.home-menu__nick-input:focus {
+  border-color: var(--color-border-hover);
+  background: var(--color-field);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.home-menu__nick-apply {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height);
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: transparent;
+  color: var(--color-whitetext);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.home-menu__nick-apply:hover {
+  color: var(--color-accent);
+}
+
+.home-menu__nick-apply:active {
+  transform: scale(0.94);
+}
+
+.home-menu__nick-apply:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.home-menu__nick-apply.is-applied {
+  color: var(--color-success);
+}
+
+.home-menu__nick-apply svg {
+  display: block;
+}
+
+.home-menu__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-menu__btn {
+  width: 100%;
+  min-height: 42px;
+  border-radius: var(--radius-md);
+  background: rgba(33, 33, 33, 0.72);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.home-menu__btn:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+  color: var(--color-accent);
+  background: var(--color-field);
+}
+
+.home-menu__btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.home-menu__btn--scenarios {
+  margin-top: 14px;
+}
+
+.home-menu__footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.home-menu__exit {
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--color-whitetext);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.home-menu__exit:hover {
+  color: var(--color-danger);
+  border-color: rgba(196, 92, 92, 0.35);
+  background: rgba(196, 92, 92, 0.08);
+}
+
+/* Account popups */
+
+.home-account-popup.lc-popup {
+  z-index: var(--z-popup);
+}
+
+.home-account-popup__backdrop {
+  background: var(--backdrop-strong);
+}
+
+.home-account-popup__panel {
+  position: relative;
+  margin: 0;
+  padding: 28px 26px 24px;
+  max-width: 360px;
+  box-shadow: var(--shadow-popup);
+}
+
+.home-account-popup__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-whitetext);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.home-account-popup__close:hover {
+  color: var(--color-accent);
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.home-account-popup__eyebrow {
+  margin: 0 0 6px;
+  color: var(--color-whitetext);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.home-account-popup__heading {
+  margin: 0 0 8px;
+  padding-right: 28px;
+  color: var(--color-accent);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.home-account-popup__lead {
+  margin: 0 0 18px;
+  color: var(--color-whitetext);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.home-account-popup__lead [data-home-account-login] {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.home-account-popup__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-account-popup__choice {
+  width: 100%;
+  min-height: 42px;
+  font-weight: 600;
+  background: rgba(33, 33, 33, 0.72);
+}
+
+.home-account-popup__choice:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-field);
+}
+
+.home-account-popup__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+
+.home-account-popup__input {
+  width: 100%;
+  min-height: var(--control-height);
+  background: rgba(20, 20, 20, 0.55);
+}
+
+.home-account-popup__input:focus {
+  background: var(--color-bg);
+}
+
+.home-account-popup__panel > .home-account-popup__input {
+  margin-bottom: 14px;
+}
+
+.home-account-popup__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-account-popup__actions .btn {
+  flex: 1 1 0;
+  min-height: 40px;
+  font-weight: 600;
+}
+
+@keyframes home-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 420px) {
+  .home-account-popup__actions {
+    flex-direction: column-reverse;
+  }
+
+  .home-account-popup__actions .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-menu {
+    animation: none;
+  }
+}

@@ -1,0 +1,13 @@
+{% macro filter_toggle(label="Фильтр") %}
+<button
+  type="button"
+  class="filter-panel__toggle"
+  data-filter-toggle
+  aria-expanded="false"
+>
+  <span class="filter-panel__toggle-label">{{ label }}</span>
+  <svg class="filter-panel__chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+    <path fill="currentColor" d="M7.4 9.2a1 1 0 0 1 1.4 0L12 12.4l3.2-3.2a1 1 0 1 1 1.4 1.4l-3.9 3.9a1 1 0 0 1-1.4 0l-3.9-3.9a1 1 0 0 1 0-1.4z"/>
+  </svg>
+</button>
+{% endmacro %}

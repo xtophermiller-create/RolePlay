@@ -1,0 +1,70 @@
+{% extends "app.html" %}
+{% block title %}Новая сессия — Roleplay Trainer{% endblock %}
+{% block body_class %}app-page app-page--scenarios app-page--session-pick{% endblock %}
+{% block app_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios.css', v='6') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='1') }}">
+{% endblock %}
+{% block app_content %}
+<section
+  class="scenarios"
+  data-session-pick
+  data-api-create="{{ api.create }}"
+  data-api-lobby="{{ api.lobby }}"
+>
+  <header class="scenarios__top scenarios__top--solo">
+    <a
+      class="scenarios__back"
+      href="{{ url_for('home.index') }}"
+      title="Назад"
+      aria-label="Назад в меню"
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M15.4 5.4a1 1 0 0 1 0 1.4L10.2 12l5.2 5.2a1 1 0 1 1-1.4 1.4l-5.9-5.9a1 1 0 0 1 0-1.4l5.9-5.9a1 1 0 0 1 1.4 0z"
+        />
+      </svg>
+    </a>
+    <div class="scenarios__heading">
+      <p class="scenarios__eyebrow">Сессия</p>
+      <h1 class="scenarios__title">Выберите сценарий</h1>
+    </div>
+  </header>
+
+  <div class="scenarios-grid" data-session-pick-grid>
+    {% for s in scenarios %}
+    <button
+      type="button"
+      class="scenario-card scenario-card--pick"
+      data-session-pick-card
+      data-scenario-id="{{ s.scenario_id }}"
+      style="--card-delay: {{ (loop.index0 % 12) * 40 }}ms"
+    >
+      <div class="scenario-card__cover">
+        <img
+          class="scenario-card__avatar"
+          src="{{ url_for('static', filename='icons/ui/scenario-avatar.svg') }}"
+          alt=""
+          width="200"
+          height="200"
+          draggable="false"
+        >
+      </div>
+      <span class="scenario-card__title scenario-card__title--static">
+        <span class="scenario-card__title-text">{{ s.title or "Без названия" }}</span>
+      </span>
+    </button>
+    {% else %}
+    <div class="scenarios-empty">
+      <p class="scenarios-empty__title">Нет сценариев</p>
+      <p class="scenarios-empty__text">Сначала создай сценарий в библиотеке — потом соберёшь сессию.</p>
+      <a class="btn btn--accent btn--pill" href="{{ url_for('scenarios.index') }}">К сценариям</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+{% block app_scripts %}
+<script src="{{ url_for('static', filename='js/session-pick.js', v='1') }}"></script>
+{% endblock %}

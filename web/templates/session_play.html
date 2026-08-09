@@ -1,0 +1,83 @@
+{% extends "app.html" %}
+{% block title %}{{ session_data.scenario_title or "Сессия" }} — бой{% endblock %}
+{% block body_class %}app-page app-page--session-play{% endblock %}
+{% block app_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='9') }}">
+{% endblock %}
+{% block app_content %}
+<section
+  class="session-play"
+  data-session-play
+  data-session-id="{{ session_data.session_id }}"
+  data-current-user-id="{{ current_user_id }}"
+  data-is-host="{{ '1' if is_host else '0' }}"
+  data-is-guest="{{ '1' if is_guest else '0' }}"
+  data-default-avatar="{{ default_avatar_url }}"
+  data-api-play="{{ api.play }}"
+  data-api-ping="{{ api.ping }}"
+  data-api-away="{{ api.away }}"
+  data-api-ready="{{ api.ready }}"
+  data-api-complete="{{ api.complete }}"
+  data-api-home="{{ api.home }}"
+  data-role-actor1="{{ role_labels.actor1 }}"
+  data-role-actor2="{{ role_labels.actor2 }}"
+  data-role-observer="{{ role_labels.observer }}"
+>
+  <header class="session-play__top">
+    <div class="session-play__top-lead">
+      <a
+        class="session-shell__back"
+        href="{{ api.home }}"
+        data-play-back
+        title="Выйти"
+        aria-label="Выйти в меню"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M15.4 5.4a1 1 0 0 1 0 1.4L10.2 12l5.2 5.2a1 1 0 1 1-1.4 1.4l-5.9-5.9a1 1 0 0 1 0-1.4l5.9-5.9a1 1 0 0 1 1.4 0z"
+          />
+        </svg>
+      </a>
+      <div class="session-play__heading">
+        <p class="session-shell__eyebrow" data-play-stage>Подготовка</p>
+        <h1 class="session-shell__title" data-play-title>{{ session_data.scenario_title or "Сессия" }}</h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="session-play__body" data-play-body>
+    <p class="session-play__loading">Загрузка…</p>
+  </div>
+
+  <div class="session-play__actions" data-play-actions hidden></div>
+</section>
+
+<div class="session-play-popup lc-popup lc-popup--card" data-play-complete-popup hidden>
+  <div class="session-play-popup__backdrop" data-play-complete-close></div>
+  <div
+    class="session-play-popup__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="session-play-complete-title"
+  >
+    <p class="session-play-popup__eyebrow">Завершение</p>
+    <h2 class="session-play-popup__heading" id="session-play-complete-title">Завершить ролевку?</h2>
+    <p class="session-play-popup__lead">
+      Сессия будет закрыта для всех участников. Это действие нельзя отменить.
+    </p>
+    <div class="session-play-popup__actions">
+      <button type="button" class="btn btn--pill" data-play-complete-close>Отмена</button>
+      <button type="button" class="btn btn--accent btn--pill" data-play-complete-confirm>Завершить</button>
+    </div>
+  </div>
+</div>
+
+<script id="session-play-bootstrap" type="application/json">{{ {
+  "session": session_data,
+  "role_labels": role_labels,
+}|tojson }}</script>
+{% endblock %}
+{% block app_scripts %}
+<script src="{{ url_for('static', filename='js/session-play.js', v='12') }}"></script>
+{% endblock %}

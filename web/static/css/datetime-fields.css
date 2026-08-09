@@ -1,0 +1,59 @@
+/* Единые поля даты/времени с кнопкой native-пикера */
+
+.dt-field {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.dt-field__input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dt-field > .dt-field__input {
+  padding-right: 2.35rem;
+}
+
+.dt-field__picker {
+  position: absolute;
+  top: 50%;
+  right: 0.3rem;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-whitetext, #8a8a8a);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.dt-field__picker:hover {
+  color: var(--color-accent, #ffffff);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dt-field__picker:focus-visible {
+  outline: 2px solid var(--color-border, #313131);
+  outline-offset: 1px;
+}
+
+.dt-field__native {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
