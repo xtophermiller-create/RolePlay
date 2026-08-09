@@ -1,13 +1,13 @@
 """
-Аватарки пользователя → storage/media/avatars.
-
-Источник истины пути — User.avatar (не угадываем файл по id).
-Имя файла: u{user_id}_{uuid}.jpg
+Медиафайлы → storage/media/:
+  avatars/   — аватарки (u{user_id}_{uuid}.jpg)
+  scenarios/ — картинки в теле сценария (s{scenario_id}_{uuid}.jpg)
 """
 
 from __future__ import annotations
 
 import os
+import re
 import uuid
 import warnings
 from typing import Any
@@ -20,7 +20,10 @@ from app.extensions import db
 
 AVATAR_SIZE = 512
 AVATAR_REL_DIR = "avatars"
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+SCENARIO_IMAGE_REL_DIR = "scenarios"
+SCENARIO_IMAGE_MAX_EDGE = 1600
+SCENARIO_IMAGE_NAME_RE = re.compile(r"^s(\d+)_([a-f0-9]{32})\.jpg$")
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 
 
 def _project_media_dir() -> str:
@@ -134,6 +137,67 @@ def user_avatar_abs_path(user: User) -> str | None:
     if not user or not user.avatar:
         return None
     abs_path = _abs_from_rel(user.avatar)
+    if not os.path.isfile(abs_path):
+        return None
+    return abs_path
+
+
+def _scenarios_abs_dir() -> str:
+    path = os.path.join(_project_media_dir(), SCENARIO_IMAGE_REL_DIR)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _fit_max_edge(image: Image.Image, max_edge: int) -> Image.Image:
+    """RGB, длинная сторона ≤ max_edge (без кропа)."""
+    image = image.copy()
+    if image.mode in ("RGBA", "LA"):
+        background = Image.new("RGB", image.size, (255, 255, 255))
+        alpha = image.split()[-1]
+        background.paste(image.convert("RGBA"), mask=alpha)
+        image = background
+    elif image.mode == "P":
+        image = image.convert("RGBA")
+        background = Image.new("RGB", image.size, (255, 255, 255))
+        background.paste(image, mask=image.split()[-1])
+        image = background
+    else:
+        image = image.convert("RGB")
+
+    width, height = image.size
+    longest = max(width, height)
+    if longest > max_edge:
+        scale = max_edge / longest
+        image = image.resize(
+            (max(1, int(width * scale)), max(1, int(height * scale))),
+            Image.Resampling.LANCZOS,
+        )
+    return image
+
+
+def save_scenario_image(scenario_id: int, upload: Any) -> str | None:
+    """Сохранить картинку сценария. Возвращает имя файла (basename) или None."""
+    raw = _load_upload(upload)
+    if raw is None:
+        return None
+
+    image = _fit_max_edge(raw, SCENARIO_IMAGE_MAX_EDGE)
+    _scenarios_abs_dir()
+    filename = f"s{int(scenario_id)}_{uuid.uuid4().hex}.jpg"
+    rel = f"{SCENARIO_IMAGE_REL_DIR}/{filename}"
+    abs_path = _abs_from_rel(rel)
+    try:
+        image.save(abs_path, format="JPEG", quality=85, optimize=True)
+    except OSError:
+        return None
+    return filename
+
+
+def scenario_image_abs_path(filename: str) -> str | None:
+    name = os.path.basename((filename or "").strip())
+    if not SCENARIO_IMAGE_NAME_RE.match(name):
+        return None
+    abs_path = _abs_from_rel(f"{SCENARIO_IMAGE_REL_DIR}/{name}")
     if not os.path.isfile(abs_path):
         return None
     return abs_path

@@ -73,7 +73,10 @@ def list_participants(session_id: int) -> list[RpSessionParticipant]:
 def _scenario_snapshot_for_host(
     host_user_id: int, scenario_id: int
 ) -> Result[tuple[Scenario, str, str]]:
-    """Сценарий хозяина → (row, title, snapshot_json)."""
+    """Сценарий хозяина → (row, title, snapshot_json).
+
+    title — как в библиотеке (карточка), не «тихое» имя из устаревшего файла.
+    """
     host = User.query.filter_by(user_id=host_user_id).first()
     if not host:
         return Err("user_not_found")
@@ -91,12 +94,17 @@ def _scenario_snapshot_for_host(
     except (OSError, ValueError, json.JSONDecodeError):
         return Err("scenario_file_missing")
 
-    title = document_title(document) or scenario.title or "Без названия"
+    title = (
+        (scenario.title or "").strip()
+        or document_title(document)
+        or "Без названия"
+    )[:200]
+    document["title"] = title
     try:
         snapshot = json.dumps(document, ensure_ascii=False)
     except (TypeError, ValueError):
         return Err("scenario_snapshot_failed")
-    return Ok((scenario, title[:200], snapshot))
+    return Ok((scenario, title, snapshot))
 
 
 def create_session(host_user_id: int, scenario_id: int) -> Result[RpSession]:
@@ -132,7 +140,7 @@ def create_session(host_user_id: int, scenario_id: int) -> Result[RpSession]:
 def set_session_scenario(
     session_id: int, host_user_id: int, scenario_id: int
 ) -> Result[RpSession]:
-    """Сменить сценарий сессии. Только lobby, только хост."""
+    """Сменить сценарий. Только lobby, только хост."""
     row = get_session(session_id)
     if not row or row.host_user_id != host_user_id:
         return Err("not_found")
@@ -149,25 +157,7 @@ def set_session_scenario(
     row.scenario_snapshot = snapshot
     if not try_commit():
         return Err("db_commit_failed")
-    return Ok(row)
-
-
-def reopen_session(session_id: int, host_user_id: int) -> Result[RpSession]:
-    """finished → lobby. Участники и роли сохраняются, таймстемпы сбрасываются."""
-    row = get_session(session_id)
-    if not row or row.host_user_id != host_user_id:
-        return Err("not_found")
-    if row.status != STATUS_FINISHED:
-        return Err("invalid_status")
-
-    row.status = STATUS_LOBBY
-    row.started_at = None
-    row.ready_at = None
-    row.finished_at = None
-    for p in list_participants(session_id):
-        p.is_ready = False
-    if not try_commit():
-        return Err("db_commit_failed")
+    db.session.refresh(row)
     return Ok(row)
 
 
@@ -200,6 +190,25 @@ def finish_session(session_id: int, host_user_id: int) -> Result[RpSession]:
         return Err("invalid_status")
     row.status = STATUS_FINISHED
     row.finished_at = _utcnow()
+    if not try_commit():
+        return Err("db_commit_failed")
+    return Ok(row)
+
+
+def reopen_session(session_id: int, host_user_id: int) -> Result[RpSession]:
+    """finished → lobby. Участники и роли сохраняются, ready сбрасывается."""
+    row = get_session(session_id)
+    if not row or row.host_user_id != host_user_id:
+        return Err("not_found")
+    if row.status != STATUS_FINISHED:
+        return Err("invalid_status")
+
+    row.status = STATUS_LOBBY
+    row.started_at = None
+    row.ready_at = None
+    row.finished_at = None
+    for p in list_participants(session_id):
+        p.is_ready = False
     if not try_commit():
         return Err("db_commit_failed")
     return Ok(row)
@@ -261,11 +270,6 @@ def play_payload(session_id: int, user_id: int) -> Result[dict[str, Any]]:
             "my_ready": my_ready,
             "actors_ready": actors_ready(session_id),
             "document": document,
-            "ui_hint": {
-                "actor1": ["roles.actor1"],
-                "actor2": ["roles.actor2"],
-                "observer": ["roles.actor1", "roles.actor2"],
-            },
         }
     )
 

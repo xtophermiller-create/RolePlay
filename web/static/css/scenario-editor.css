@@ -389,11 +389,104 @@
   background: var(--color-accent);
 }
 
+.role-pane__tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
+.role-pane__tool:disabled:hover {
+  color: var(--color-whitetext);
+  border-color: transparent;
+  background: transparent;
+}
+
+.role-pane__tool svg {
+  display: block;
+}
+
 .role-pane__tool-sep {
   width: 1px;
   height: 16px;
   margin: 0 2px;
   background: var(--color-border);
+}
+
+.role-pane__list-tools {
+  position: relative;
+}
+
+.role-pane__menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.role-pane__tool--menu {
+  gap: 5px;
+  min-width: 42px;
+  padding: 0 7px;
+}
+
+.role-pane__menu-caret {
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid currentColor;
+  opacity: 0.85;
+}
+
+.role-pane__menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 168px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(22, 22, 22, 0.98);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-pane__menu-panel[hidden] {
+  display: none !important;
+}
+
+.role-pane__menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.role-pane__menu-item:hover {
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.role-pane__menu-item.is-active {
+  color: var(--color-bg);
+  border-color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .role-pane__editor {
@@ -432,11 +525,32 @@
 .role-pane__editor .ProseMirror ul,
 .role-pane__editor .ProseMirror ol {
   margin: 0 0 0.75em;
-  padding-left: 1.35em;
+  padding-left: 1.6em;
+}
+
+.role-pane__editor .ProseMirror ul {
+  list-style: disc;
+}
+
+.role-pane__editor .ProseMirror ol {
+  list-style: decimal;
+}
+
+.role-pane__editor .ProseMirror ul ul,
+.role-pane__editor .ProseMirror ol ol,
+.role-pane__editor .ProseMirror ul ol,
+.role-pane__editor .ProseMirror ol ul {
+  margin: 0.25em 0 0.35em;
 }
 
 .role-pane__editor .ProseMirror li {
   margin: 0.18em 0;
+}
+
+.role-pane__editor .ProseMirror li::marker {
+  color: inherit;
+  font-weight: inherit;
+  opacity: 1;
 }
 
 .role-pane__editor .ProseMirror p.is-editor-empty:first-child::before {
@@ -446,6 +560,99 @@
   color: var(--color-whitetext);
   opacity: 0.85;
   pointer-events: none;
+}
+
+.role-pane__editor .rp-section {
+  margin: 0.85em 0;
+  border: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: rgba(20, 20, 20, 0.35);
+}
+
+/* Без белой/голубой обводки ProseMirror на «выбранном» фрейме */
+.role-pane__editor .rp-section.ProseMirror-selectednode {
+  outline: none;
+  background: rgba(20, 20, 20, 0.35);
+}
+
+.role-pane__editor .rp-section__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(12, 12, 12, 0.45);
+}
+
+.role-pane__editor .rp-section__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 2px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  outline: none;
+  box-shadow: none;
+}
+
+.role-pane__editor .rp-section__title:focus {
+  color: var(--color-accent);
+}
+
+.role-pane__editor .rp-section__remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-whitetext);
+  cursor: pointer;
+}
+
+.role-pane__editor .rp-section__remove:hover {
+  color: #ff8e8e;
+  border-color: rgba(196, 92, 92, 0.45);
+}
+
+.role-pane__editor .rp-section__remove svg {
+  display: block;
+}
+
+.role-pane__editor .rp-section__body {
+  padding: 10px 12px 12px;
+}
+
+.role-pane__editor .rp-section__body > :first-child {
+  margin-top: 0;
+}
+
+.role-pane__editor .rp-section__body > :last-child {
+  margin-bottom: 0;
+}
+
+.role-pane__editor .rp-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75em 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(12, 12, 12, 0.55);
 }
 
 @keyframes editor-fade-in {

@@ -64,7 +64,10 @@ def _enrich_participants(payload: dict) -> dict:
 
 
 def _session_payload(row) -> dict:
-    return _enrich_participants(sessions_service.session_to_dict(row))
+    payload = _enrich_participants(sessions_service.session_to_dict(row))
+    # Чтобы лобби всегда могло обновить роли/название без отдельного поля.
+    payload["role_labels"] = _role_labels(row)
+    return payload
 
 
 def _fallback_home():
@@ -136,15 +139,17 @@ def lobby(session_id: int):
         return redirect(_fallback_home())
 
     guest = is_guest_session()
+    is_host = row.host_user_id == user_id
     payload = _session_payload(row)
+    host_scenarios = list_scenarios(user_id) if is_host and not guest else []
     return render_template(
         "session_lobby.html",
         session_row=row,
         session_data=payload,
-        free_roles=participants_service.free_roles(session_id),
         role_labels=_role_labels(row),
+        scenarios=host_scenarios,
         current_user_id=user_id,
-        is_host=row.host_user_id == user_id,
+        is_host=is_host,
         is_guest=guest,
         default_avatar_url=default_avatar_url(),
         crown_url=url_for("static", filename="icons/ui/crown.svg"),
@@ -152,6 +157,7 @@ def lobby(session_id: int):
             "get": url_for("sessions.api_get", session_id=session_id),
             "ping": url_for("sessions.api_ping", session_id=session_id),
             "role": url_for("sessions.api_choose_role", session_id=session_id),
+            "scenario": url_for("sessions.api_set_scenario", session_id=session_id),
             "start": url_for("sessions.api_start", session_id=session_id),
             "play_page": url_for("sessions.play", session_id=session_id),
             "cancel": url_for("sessions.api_cancel", session_id=session_id),
@@ -193,6 +199,7 @@ def play(session_id: int):
             "ping": url_for("sessions.api_ping", session_id=session_id),
             "ready": url_for("sessions.api_ready", session_id=session_id),
             "complete": url_for("sessions.api_complete", session_id=session_id),
+            "restart": url_for("sessions.api_restart", session_id=session_id),
             "home": _fallback_home(),
             "lobby": url_for("sessions.lobby", session_id=session_id),
         },
@@ -257,7 +264,7 @@ def api_get(session_id: int):
         {
             "ok": True,
             "session": _session_payload(row),
-            "free_roles": participants_service.free_roles(session_id),
+            "role_labels": _role_labels(row),
         }
     )
 
@@ -274,7 +281,7 @@ def api_ping(session_id: int):
         {
             "ok": True,
             "session": _session_payload(row),
-            "free_roles": participants_service.free_roles(session_id),
+            "role_labels": _role_labels(row),
         }
     )
 
@@ -293,7 +300,30 @@ def api_choose_role(session_id: int):
         {
             "ok": True,
             "participant": sessions_service.participant_to_dict(result.value),
-            "free_roles": participants_service.free_roles(session_id),
+        }
+    )
+
+
+@bp.post("/api/<int:session_id>/scenario")
+@registered_required
+def api_set_scenario(session_id: int):
+    """Сменить сценарий в лобби (только хост, только status=lobby)."""
+    data = request.get_json(silent=True) or {}
+    try:
+        scenario_id = int(data.get("scenario_id"))
+    except (TypeError, ValueError):
+        return _json_error("invalid_scenario", "Укажите scenario_id", 400)
+    result = sessions_service.set_session_scenario(
+        session_id, session["user_id"], scenario_id
+    )
+    if not result:
+        return _err(result.error)
+    row = result.value
+    return jsonify(
+        {
+            "ok": True,
+            "session": _session_payload(row),
+            "role_labels": _role_labels(row),
         }
     )
 
@@ -350,6 +380,22 @@ def api_complete(session_id: int):
     if not result:
         return _err(result.error)
     return jsonify({"ok": True, "session": _session_payload(result.value)})
+
+
+@bp.post("/api/<int:session_id>/restart")
+@registered_required
+def api_restart(session_id: int):
+    """finished → lobby (только хост)."""
+    result = sessions_service.reopen_session(session_id, session["user_id"])
+    if not result:
+        return _err(result.error)
+    return jsonify(
+        {
+            "ok": True,
+            "session": _session_payload(result.value),
+            "lobby_url": url_for("sessions.lobby", session_id=session_id),
+        }
+    )
 
 
 @bp.post("/api/<int:session_id>/cancel")

@@ -156,18 +156,6 @@ def roles_ready(session_id: int) -> bool:
     return counts[ROLE_ACTOR1] == 1 and counts[ROLE_ACTOR2] == 1
 
 
-def free_roles(session_id: int) -> list[str]:
-    """Свободные роли для UI лобби (observer всегда доступен)."""
-    taken = {
-        p.role
-        for p in sessions_core.list_participants(session_id)
-        if p.role in _ACTOR_ROLES
-    }
-    free = [role for role in _ACTOR_ROLES if role not in taken]
-    free.append(ROLE_OBSERVER)
-    return free
-
-
 def heartbeat(session_id: int, user_id: int) -> Result[RpSession]:
     """Обновление состояния лобби/боя (presence убран — просто проверка доступа)."""
     row = sessions_core.get_session(session_id)

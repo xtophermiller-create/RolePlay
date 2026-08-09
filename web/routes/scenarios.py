@@ -1,17 +1,20 @@
 from flask import (
     Blueprint,
+    abort,
     current_app,
     flash,
     jsonify,
     redirect,
     render_template,
     request,
+    send_file,
     session,
     url_for,
 )
 
-from app.auth_utils import registered_required
-from app.services.scenarios import create_scenario, delete_scenario, list_scenarios
+from app.auth_utils import login_required, registered_required
+from app.services import media as media_service
+from app.services.scenarios import create_scenario, delete_scenario, get_scenario, list_scenarios
 from app.services.scenarios import editor as scenario_editor
 
 bp = Blueprint("scenarios", __name__, url_prefix="/scenarios")
@@ -119,9 +122,43 @@ def edit(scenario_id):
         document=document,
         api={
             "save": url_for("scenarios.api_save", scenario_id=scenario_id),
+            "image": url_for("scenarios.api_upload_image", scenario_id=scenario_id),
             "list": url_for("scenarios.index"),
         },
     )
+
+
+@bp.route("/<int:scenario_id>/api/image", methods=["POST"])
+@registered_required
+def api_upload_image(scenario_id):
+    """Загрузить картинку для вставки в body сценария → короткий URL."""
+    if not get_scenario(scenario_id, session["user_id"]):
+        return _json_error("not_found", 404)
+
+    upload = request.files.get("image")
+    filename = media_service.save_scenario_image(scenario_id, upload)
+    if not filename:
+        return _json_error(
+            "Не удалось загрузить изображение. Нужны jpg/png/webp/gif до 2 МБ.",
+            400,
+        )
+
+    return jsonify(
+        {
+            "ok": True,
+            "url": url_for("scenarios.scenario_media", filename=filename),
+        }
+    )
+
+
+@bp.route("/media/<path:filename>")
+@login_required
+def scenario_media(filename):
+    """Отдать картинку сценария (нужна участникам сессии, не только автору)."""
+    abs_path = media_service.scenario_image_abs_path(filename)
+    if not abs_path:
+        abort(404)
+    return send_file(abs_path, mimetype="image/jpeg", max_age=3600)
 
 
 @bp.route("/<int:scenario_id>/api/save", methods=["POST"])
@@ -144,11 +181,10 @@ def api_save(scenario_id):
         status = 404 if result.error == "not_found" else 400
         return _json_error(result.error or "save_failed", status)
 
-    row, doc = result.value
+    row, _doc = result.value
     return jsonify(
         {
             "ok": True,
             "scenario": _scenario_payload(row),
-            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
         }
     )

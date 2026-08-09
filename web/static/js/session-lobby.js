@@ -14,10 +14,15 @@
   const titleEl = root.querySelector("[data-lobby-title]");
   const copyBtn = root.querySelector("[data-lobby-copy]");
   const startBtn = root.querySelector("[data-lobby-start]");
+  const scenarioOpenBtn = root.querySelector("[data-lobby-scenario-open]");
+  const scenarioWrap = root.querySelector("[data-lobby-scenario-wrap]");
+  const scenarioPopup = document.querySelector("[data-lobby-scenario-popup]");
+  const scenarioCards = [...document.querySelectorAll("[data-lobby-scenario-card]")];
 
   const getUrl = root.getAttribute("data-api-get") || "";
   const pingUrl = root.getAttribute("data-api-ping") || "";
   const roleUrl = root.getAttribute("data-api-role") || "";
+  const scenarioUrl = root.getAttribute("data-api-scenario") || "";
   const startUrl = root.getAttribute("data-api-start") || "";
   const playPageUrl = root.getAttribute("data-api-play-page") || "";
   const cancelUrl = root.getAttribute("data-api-cancel") || "";
@@ -30,6 +35,7 @@
   const isHost = root.getAttribute("data-is-host") === "1";
   const isGuest = root.getAttribute("data-is-guest") === "1";
   const backLink = root.querySelector("[data-lobby-back]");
+  let scenarioBusy = false;
 
   const bounceGuest = () => {
     departed = true;
@@ -53,6 +59,40 @@
     actor1: root.getAttribute("data-role-actor1") || state.role_labels?.actor1 || "Роль 1",
     actor2: root.getAttribute("data-role-actor2") || state.role_labels?.actor2 || "Роль 2",
     observer: root.getAttribute("data-role-observer") || state.role_labels?.observer || "Наблюдатель",
+  };
+
+  const applyRoleLabels = (labels) => {
+    if (!labels || typeof labels !== "object") return;
+    if (labels.actor1) {
+      roleLabels.actor1 = labels.actor1;
+      root.setAttribute("data-role-actor1", labels.actor1);
+    }
+    if (labels.actor2) {
+      roleLabels.actor2 = labels.actor2;
+      root.setAttribute("data-role-actor2", labels.actor2);
+    }
+    if (labels.observer) {
+      roleLabels.observer = labels.observer;
+      root.setAttribute("data-role-observer", labels.observer);
+    }
+  };
+
+  const syncScenarioCards = (scenarioId) => {
+    const current = scenarioId != null ? String(scenarioId) : "";
+    scenarioCards.forEach((card) => {
+      const id = card.getAttribute("data-scenario-id") || "";
+      const isCurrent = Boolean(current) && id === current;
+      card.classList.toggle("is-current", isCurrent);
+      if (isCurrent) card.setAttribute("aria-current", "true");
+      else card.removeAttribute("aria-current");
+      card.disabled = scenarioBusy;
+    });
+  };
+
+  const closeScenarioPopup = () => {
+    if (scenarioPopup && window.LifeCorePopup) {
+      window.LifeCorePopup.close(scenarioPopup);
+    }
   };
 
   const STATUS_LABEL = {
@@ -92,7 +132,7 @@
       const aHost = a.user_id === session.host_user_id ? 0 : 1;
       const bHost = b.user_id === session.host_user_id ? 0 : 1;
       if (aHost !== bHost) return aHost - bHost;
-      return String(a.joined_at || "").localeCompare(String(b.joined_at || ""));
+      return (a.participant_id || 0) - (b.participant_id || 0);
     });
     return list.map((p) => ({
       key: String(p.user_id),
@@ -167,13 +207,27 @@
     return el;
   };
 
+  const setLobbyTitle = (title) => {
+    const text = (title || "").trim() || "Сессия";
+    if (titleEl) titleEl.textContent = text;
+    document.title = `${text} — лобби`;
+  };
+
   const render = () => {
     const session = state.session;
     if (!session) return;
 
-    if (titleEl) titleEl.textContent = session.scenario_title || "Сессия";
+    setLobbyTitle(session.scenario_title);
     if (codeEl) codeEl.textContent = session.code || "";
     if (statusEl) statusEl.textContent = STATUS_LABEL[session.status] || session.status;
+
+    if (scenarioWrap) {
+      const canChange = isHost && !isGuest && session.status === "lobby";
+      scenarioWrap.hidden = !canChange;
+      if (scenarioOpenBtn) scenarioOpenBtn.disabled = !canChange || scenarioBusy;
+      syncScenarioCards(session.scenario_id);
+      if (!canChange) closeScenarioPopup();
+    }
 
     if (seatsEl) {
       seatsEl.replaceChildren();
@@ -186,7 +240,7 @@
     }
 
     if (startBtn) {
-      if (isGuest) {
+      if (!isHost || isGuest) {
         startBtn.hidden = true;
         startBtn.disabled = true;
       } else {
@@ -210,20 +264,45 @@
     location.href = target;
   };
 
+  let scenarioPin = null;
+
   const applySessionPayload = (data) => {
     if (!data?.session) return;
-    state.session = data.session;
-    state.free_roles = data.free_roles || [];
+
+    let session = data.session;
+    let labels = data.role_labels || session.role_labels || null;
+
+    // Ответ ping/get, ушедший до commit смены сценария, не должен откатывать UI.
+    if (
+      scenarioPin &&
+      Number(session.scenario_id) !== Number(scenarioPin.id) &&
+      Date.now() - scenarioPin.at < 20000
+    ) {
+      session = {
+        ...session,
+        scenario_id: scenarioPin.id,
+        scenario_title: scenarioPin.title,
+      };
+      labels = scenarioPin.labels || labels;
+    } else if (
+      scenarioPin &&
+      Number(session.scenario_id) === Number(scenarioPin.id)
+    ) {
+      scenarioPin = null;
+    }
+
+    if (labels) applyRoleLabels(labels);
+    state.session = session;
     render();
     if (
-      data.session.status === "started" ||
-      data.session.status === "active" ||
-      data.session.status === "ready"
+      session.status === "started" ||
+      session.status === "active" ||
+      session.status === "ready"
     ) {
       goPlay(playPageUrl);
       return;
     }
-    if (data.session.status === "cancelled") {
+    if (session.status === "cancelled") {
       departed = true;
       toast("Сессия отменена", "error");
       window.setTimeout(() => {
@@ -322,7 +401,7 @@
 
   startBtn?.addEventListener("click", async (event) => {
     event.preventDefault();
-    if (isGuest || !startUrl || startBtn.disabled) return;
+    if (!isHost || isGuest || !startUrl || startBtn.disabled) return;
     startBtn.disabled = true;
     try {
       const data = await postJson(startUrl, {});
@@ -337,6 +416,86 @@
       toast(err.message || "Не удалось начать", "error");
       void refresh();
     }
+  });
+
+  const openScenarioPopup = () => {
+    if (!isHost || isGuest || !scenarioPopup || !window.LifeCorePopup) return;
+    if (state.session?.status !== "lobby") {
+      toast("Сценарий можно менять только до старта", "error");
+      return;
+    }
+    syncScenarioCards(state.session?.scenario_id);
+    window.LifeCorePopup.open(scenarioPopup);
+  };
+
+  const pickScenario = async (card) => {
+    if (!isHost || isGuest || !scenarioUrl || scenarioBusy || !card) return;
+    if (state.session?.status !== "lobby") {
+      toast("Сценарий можно менять только до старта", "error");
+      closeScenarioPopup();
+      render();
+      return;
+    }
+    const scenarioId = Number(card.getAttribute("data-scenario-id"));
+    if (!scenarioId) return;
+    if (Number(state.session?.scenario_id) === scenarioId) {
+      closeScenarioPopup();
+      return;
+    }
+
+    const cardTitle =
+      card.querySelector(".scenario-card__title-text")?.textContent?.trim() || "";
+
+    scenarioBusy = true;
+    if (scenarioOpenBtn) scenarioOpenBtn.disabled = true;
+    scenarioCards.forEach((el) => {
+      el.disabled = true;
+    });
+
+    // Сразу показать выбранное имя — не ждать ответа и не зависеть от stale ping.
+    if (cardTitle) setLobbyTitle(cardTitle);
+    syncScenarioCards(scenarioId);
+
+    try {
+      const data = await postJson(scenarioUrl, { scenario_id: scenarioId });
+      const title =
+        data.session?.scenario_title || cardTitle || state.session?.scenario_title;
+      const labels = data.role_labels || data.session?.role_labels || null;
+      scenarioPin = {
+        id: data.session?.scenario_id ?? scenarioId,
+        title,
+        labels,
+        at: Date.now(),
+      };
+      applySessionPayload(data);
+      closeScenarioPopup();
+      toast("Сценарий обновлён", "success");
+    } catch (err) {
+      scenarioPin = null;
+      toast(err.message || "Не удалось сменить сценарий", "error");
+      void refresh();
+    } finally {
+      scenarioBusy = false;
+      render();
+    }
+  };
+
+  scenarioOpenBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    openScenarioPopup();
+  });
+
+  scenarioPopup
+    ?.querySelectorAll("[data-lobby-scenario-close]")
+    .forEach((el) => {
+      el.addEventListener("click", () => closeScenarioPopup());
+    });
+
+  scenarioCards.forEach((card) => {
+    card.addEventListener("click", (event) => {
+      event.preventDefault();
+      void pickScenario(card);
+    });
   });
 
   const csrfToken = () =>

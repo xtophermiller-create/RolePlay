@@ -18,8 +18,11 @@
   const pingUrl = root.getAttribute("data-api-ping") || "";
   const readyUrl = root.getAttribute("data-api-ready") || "";
   const completeUrl = root.getAttribute("data-api-complete") || "";
+  const restartUrl = root.getAttribute("data-api-restart") || "";
   const homeUrl = root.getAttribute("data-api-home") || "/home/";
+  const lobbyUrl = root.getAttribute("data-api-lobby") || "";
   const currentUserId = Number(root.getAttribute("data-current-user-id"));
+  const isHost = root.getAttribute("data-is-host") === "1";
   const isGuest = root.getAttribute("data-is-guest") === "1";
   const defaultAvatar = root.getAttribute("data-default-avatar") || "";
 
@@ -40,7 +43,6 @@
     my_ready: false,
     actors_ready: false,
     document: null,
-    history: null,
   };
 
   try {
@@ -83,8 +85,6 @@
         if (mark.type === "bold") text = `<strong>${text}</strong>`;
         else if (mark.type === "italic") text = `<em>${text}</em>`;
         else if (mark.type === "underline") text = `<u>${text}</u>`;
-        else if (mark.type === "strike") text = `<s>${text}</s>`;
-        else if (mark.type === "code") text = `<code>${text}</code>`;
       }
       return text;
     }
@@ -106,13 +106,9 @@
         return `<ol>${kids}</ol>`;
       case "listItem":
         return `<li>${kids}</li>`;
-      case "blockquote":
-        return `<blockquote>${kids}</blockquote>`;
-      case "codeBlock":
-        return `<pre><code>${kids}</code></pre>`;
       case "section": {
         const title = escapeHtml(
-          (node.attrs?.title || "").trim() || "Секция"
+          (node.attrs?.title || "").trim() || "Вложение"
         );
         return `
           <details class="play-hint">
@@ -161,7 +157,7 @@
   };
 
   const stage = () => {
-    if (state.history || state.session?.status === "finished") return "results";
+    if (state.session?.status === "finished") return "results";
     const status = state.session?.status;
     if (status === "ready" || state.actors_ready) return "play";
     return "brief";
@@ -232,8 +228,7 @@
   };
 
   const renderResults = () => {
-    const history = state.history || {};
-    const people = Array.isArray(history.participants) ? history.participants : participants();
+    const people = participants();
     const byRole = {};
     const observers = [];
     for (const p of people) {
@@ -283,7 +278,6 @@
       stage(),
       state.my_role || "",
       state.session?.status || "",
-      state.history ? "done" : "",
       state.document ? "doc" : "",
     ].join("|");
 
@@ -296,6 +290,7 @@
       state.actors_ready ? "1" : "0",
       readyMap.actor1 ? "1" : "0",
       readyMap.actor2 ? "1" : "0",
+      isHost ? "h" : "n",
       isGuest ? "g" : "u",
     ].join("|");
   };
@@ -311,6 +306,26 @@
     actionsEl.replaceChildren();
 
     if (s === "results") {
+      if (isHost && !isGuest) {
+        const restartBtn = document.createElement("button");
+        restartBtn.type = "button";
+        restartBtn.className = "btn btn--accent btn--pill";
+        restartBtn.textContent = "Перезапустить";
+        restartBtn.addEventListener("click", () => void confirmRestart());
+        actionsEl.appendChild(restartBtn);
+
+        const exitBtn = document.createElement("button");
+        exitBtn.type = "button";
+        exitBtn.className = "btn btn--pill";
+        exitBtn.textContent = "Выйти";
+        exitBtn.addEventListener("click", () => {
+          departed = true;
+          location.href = homeUrl;
+        });
+        actionsEl.appendChild(exitBtn);
+        return;
+      }
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "btn btn--accent btn--pill";
@@ -323,9 +338,29 @@
       return;
     }
 
+    const appendComplete = () => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn--accent btn--pill";
+      btn.textContent = "Завершить ролевку";
+      btn.disabled = s !== "play";
+      btn.title =
+        s === "play" ? "Завершить сессию" : "Ждём готовности ролей 1 и 2";
+      btn.addEventListener("click", () => {
+        if (btn.disabled) return;
+        window.LifeCorePopup?.open(completePopup);
+      });
+      actionsEl.appendChild(btn);
+    };
+
     if (isActor()) {
       const ready = state.my_ready || actorReadyMap()[state.my_role];
       if (s === "play" || ready) {
+        // После «Готов» актёру кнопок нет; хост всё равно может завершить.
+        if (isHost && !isGuest) {
+          appendComplete();
+          return;
+        }
         actionsEl.hidden = true;
         return;
       }
@@ -350,25 +385,13 @@
       return;
     }
 
-    if (isObserver()) {
-      // Гость не может complete (API: guests_forbidden) — кнопку не показываем.
-      if (isGuest) {
-        actionsEl.hidden = true;
-        return;
-      }
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn btn--accent btn--pill";
-      btn.textContent = "Завершить ролевку";
-      btn.disabled = s !== "play";
-      btn.title =
-        s === "play" ? "Завершить сессию" : "Ждём готовности ролей 1 и 2";
-      btn.addEventListener("click", () => {
-        if (btn.disabled) return;
-        window.LifeCorePopup?.open(completePopup);
-      });
-      actionsEl.appendChild(btn);
+    // finish_session — только хост (роль в бою не важна).
+    if (isHost && !isGuest) {
+      appendComplete();
+      return;
     }
+
+    actionsEl.hidden = true;
   };
 
   const renderBody = () => {
@@ -420,6 +443,12 @@
     renderActions({ force });
   };
 
+  const goLobby = () => {
+    if (departed) return;
+    departed = true;
+    location.href = lobbyUrl || homeUrl;
+  };
+
   const ingestSession = (session) => {
     if (!session) return false;
     state.session = session;
@@ -432,11 +461,10 @@
       goHome("Сессия отменена", "error");
       return true;
     }
-    if (session.status === "finished" && !state.history) {
-      state.history = {
-        participants: session.participants,
-        scenario_title: session.scenario_title,
-      };
+    // Хост перезапустил → все возвращаются в лобби.
+    if (session.status === "lobby") {
+      goLobby();
+      return true;
     }
     return false;
   };
@@ -465,7 +493,11 @@
         goHome(err.message || "Сессия недоступна", "error");
         return;
       }
-      if (err.data?.error === "not_started" || err.data?.error === "session_closed") {
+      if (err.data?.error === "not_started") {
+        goLobby();
+        return;
+      }
+      if (err.data?.error === "session_closed") {
         goHome("Сессия завершена", "error");
       }
     }
@@ -508,7 +540,7 @@
   };
 
   const confirmComplete = async () => {
-    if (isGuest || finishing || !completeUrl) return;
+    if (!isHost || isGuest || finishing || !completeUrl) return;
     finishing = true;
     const confirmBtn = completePopup?.querySelector("[data-play-complete-confirm]");
     if (confirmBtn) confirmBtn.disabled = true;
@@ -519,11 +551,7 @@
         ...(state.session || {}),
         status: "finished",
       };
-      state.history = {
-        participants: state.session.participants || participants(),
-        scenario_title: state.session.scenario_title,
-      };
-      departed = true;
+      finishing = false;
       paintedBodyKey = "";
       paintedActionsKey = "";
       render({ force: true });
@@ -536,6 +564,21 @@
         return;
       }
       toast(err.message || "Не удалось завершить", "error");
+    }
+  };
+
+  let restarting = false;
+  const confirmRestart = async () => {
+    if (!isHost || isGuest || restarting || !restartUrl) return;
+    restarting = true;
+    try {
+      const data = await postJson(restartUrl, {});
+      toast("Лобби снова открыто", "success");
+      departed = true;
+      location.href = data.lobby_url || lobbyUrl || homeUrl;
+    } catch (err) {
+      restarting = false;
+      toast(err.message || "Не удалось перезапустить", "error");
     }
   };
 

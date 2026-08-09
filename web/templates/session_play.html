@@ -2,7 +2,7 @@
 {% block title %}{{ session_data.scenario_title or "Сессия" }} — бой{% endblock %}
 {% block body_class %}app-page app-page--session-play{% endblock %}
 {% block app_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='11') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='14') }}">
 {% endblock %}
 {% block app_content %}
 <section
@@ -17,7 +17,9 @@
   data-api-ping="{{ api.ping }}"
   data-api-ready="{{ api.ready }}"
   data-api-complete="{{ api.complete }}"
+  data-api-restart="{{ api.restart }}"
   data-api-home="{{ api.home }}"
+  data-api-lobby="{{ api.lobby }}"
   data-role-actor1="{{ role_labels.actor1 }}"
   data-role-actor2="{{ role_labels.actor2 }}"
   data-role-observer="{{ role_labels.observer }}"
@@ -78,5 +80,5 @@
 }|tojson }}</script>
 {% endblock %}
 {% block app_scripts %}
-<script src="{{ url_for('static', filename='js/session-play.js', v='15') }}"></script>
+<script src="{{ url_for('static', filename='js/session-play.js', v='19') }}"></script>
 {% endblock %}

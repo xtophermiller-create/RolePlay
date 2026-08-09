@@ -55,9 +55,9 @@ _BLOCKS = frozenset(
     {"paragraph", "heading", "bulletList", "orderedList", "section", "image"}
 )
 _INLINES = frozenset({"text", "hardBreak"})
-_LIST_ITEM_CHILDREN = frozenset({"paragraph", "bulletList", "orderedList"})
 
 # None = leaf: content быть не должно (или только пустой список).
+# listItem = те же блоки, что doc/section (как paragraph block* в TipTap).
 _ALLOWED_CHILDREN: dict[str, frozenset[str] | None] = {
     "doc": _BLOCKS,
     "section": _BLOCKS,
@@ -65,7 +65,7 @@ _ALLOWED_CHILDREN: dict[str, frozenset[str] | None] = {
     "heading": _INLINES,
     "bulletList": frozenset({"listItem"}),
     "orderedList": frozenset({"listItem"}),
-    "listItem": _LIST_ITEM_CHILDREN,
+    "listItem": _BLOCKS,
     "text": None,
     "hardBreak": None,
     "image": None,

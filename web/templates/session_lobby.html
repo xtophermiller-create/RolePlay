@@ -2,7 +2,8 @@
 {% block title %}{{ session_data.scenario_title or "Сессия" }} — лобби{% endblock %}
 {% block body_class %}app-page app-page--session-lobby{% endblock %}
 {% block app_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='11') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios.css', v='6') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sessions.css', v='14') }}">
 {% endblock %}
 {% block app_content %}
 <section
@@ -17,6 +18,7 @@
   data-api-get="{{ api['get'] }}"
   data-api-ping="{{ api.ping }}"
   data-api-role="{{ api.role }}"
+  data-api-scenario="{{ api.scenario }}"
   data-api-start="{{ api.start }}"
   data-api-play-page="{{ api.play_page }}"
   data-api-cancel="{{ api.cancel }}"
@@ -46,6 +48,19 @@
       <p class="session-shell__eyebrow">Лобби</p>
       <h1 class="session-shell__title" data-lobby-title>{{ session_data.scenario_title or "Сессия" }}</h1>
     </div>
+    {% if is_host and not is_guest and scenarios %}
+    <button
+      type="button"
+      class="session-lobby__scenario-btn"
+      data-lobby-scenario-open
+      data-lobby-scenario-wrap
+      title="Изменить сценарий"
+      aria-label="Изменить сценарий"
+      {% if session_data.status != 'lobby' %}hidden{% endif %}
+    >
+      Изменить сценарий
+    </button>
+    {% endif %}
     <p class="session-lobby__status" data-lobby-status>{{ session_data.status }}</p>
   </header>
 
@@ -83,12 +98,77 @@
   </div>
 </section>
 
+{% if is_host and not is_guest and scenarios %}
+<div
+  class="session-lobby-scenario-popup lc-popup"
+  data-lobby-scenario-popup
+  hidden
+>
+  <div class="session-lobby-scenario-popup__backdrop" data-lobby-scenario-close></div>
+  <div
+    class="session-lobby-scenario-popup__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="lobby-scenario-popup-title"
+  >
+    <section class="scenarios session-lobby-scenario-popup__body">
+      <header class="scenarios__top scenarios__top--solo">
+        <button
+          type="button"
+          class="scenarios__back"
+          data-lobby-scenario-close
+          title="Закрыть"
+          aria-label="Закрыть выбор сценария"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M15.4 5.4a1 1 0 0 1 0 1.4L10.2 12l5.2 5.2a1 1 0 1 1-1.4 1.4l-5.9-5.9a1 1 0 0 1 0-1.4l5.9-5.9a1 1 0 0 1 1.4 0z"
+            />
+          </svg>
+        </button>
+        <div class="scenarios__heading">
+          <p class="scenarios__eyebrow">Сессия</p>
+          <h2 class="scenarios__title" id="lobby-scenario-popup-title">Выберите сценарий</h2>
+        </div>
+      </header>
+
+      <div class="scenarios-grid" data-lobby-scenario-grid>
+        {% for s in scenarios %}
+        <button
+          type="button"
+          class="scenario-card scenario-card--pick"
+          data-lobby-scenario-card
+          data-scenario-id="{{ s.scenario_id }}"
+          style="--card-delay: {{ (loop.index0 % 12) * 40 }}ms"
+          {% if s.scenario_id == session_data.scenario_id %}aria-current="true"{% endif %}
+        >
+          <div class="scenario-card__cover">
+            <img
+              class="scenario-card__avatar"
+              src="{{ url_for('static', filename='icons/ui/scenario-avatar.svg') }}"
+              alt=""
+              width="200"
+              height="200"
+              draggable="false"
+            >
+          </div>
+          <span class="scenario-card__title scenario-card__title--static">
+            <span class="scenario-card__title-text">{{ s.title or "Без названия" }}</span>
+          </span>
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endif %}
+
 <script id="session-lobby-bootstrap" type="application/json">{{ {
   "session": session_data,
-  "free_roles": free_roles,
   "role_labels": role_labels,
 }|tojson }}</script>
 {% endblock %}
 {% block app_scripts %}
-<script src="{{ url_for('static', filename='js/session-lobby.js', v='12') }}"></script>
+<script src="{{ url_for('static', filename='js/session-lobby.js', v='17') }}"></script>
 {% endblock %}
