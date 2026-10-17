@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+  <h1>Главная</h1>
+  <p>Это меню пользователя после авторизации</p>
+  <a href="{{ url_for('pages.profile') }}">Профиль</a>
+  <a href="{{ url_for('pages.library') }}">Сценарии</a>
+  <a href="{{ url_for('pages.history') }}">История ролевок</a>
+  <a href="{{ url_for('pages.create_session') }}">Создать сессию</a>
+{% endblock %}
