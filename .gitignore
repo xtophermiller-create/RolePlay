@@ -1,17 +1,48 @@
+# Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+
+# Secrets and local config
 .env
-.env.docker
+.env.*
+!.env.example
+!.env.docker.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Deploy wrappers with real host settings (templates: ops/*.example.ps1)
+ops/deploy.ps1
+ops/logs.ps1
+
+# Runtime data
 storage/db/*
 !storage/db/.gitkeep
 storage/scenarios/*
 !storage/scenarios/.gitkeep
 storage/media/avatars/*
 !storage/media/avatars/.gitkeep
+storage/media/scenarios/*
+backups/
+logs/
+*.log
 *.db
-.DS_Store
+*.sqlite
+*.sqlite3
+
+# IDE / OS
 .idea/
-node_modules/
-.pytest_cache/
+.vscode/
+.cursor/
+.DS_Store
+Thumbs.db
+desktop.ini

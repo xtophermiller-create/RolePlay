@@ -178,7 +178,7 @@ class ReleaseSecurityTest(unittest.TestCase):
                 "roleplay-scenario",
             )
 
-    def test_pruning_fresh_lobby_session_returns_empty_removals(self):
+    def test_fresh_lobby_session_heartbeat_succeeds(self):
         from app.services import scenarios
         from app.services.sessions import create_session, participants
 
@@ -188,10 +188,11 @@ class ReleaseSecurityTest(unittest.TestCase):
             self.assertTrue(created)
             session = create_session(owner_id, created.value[0].scenario_id)
             self.assertTrue(session)
-            self.assertEqual(
-                participants.prune_all_stale_sessions(),
-                0,
+            heartbeat = participants.heartbeat(
+                session.value.session_id,
+                owner_id,
             )
+            self.assertTrue(heartbeat)
 
     def test_scenario_payload_limit_rejects_before_json_parsing(self):
         user_id = self._create_user()
@@ -261,7 +262,20 @@ class ReleaseSecurityTest(unittest.TestCase):
         self.assertTrue({"users", "scenarios", "auth_attempts", "alembic_version"} <= tables)
 
     def test_import_copy_is_atomic_idempotent_and_conflict_safe(self):
-        from scripts.import_sqlite_to_mysql import _copy_atomic
+        import importlib.util
+
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "ops"
+            / "scripts"
+            / "import_sqlite_to_mysql.py"
+        )
+        spec = importlib.util.spec_from_file_location("import_sqlite_to_mysql", script)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _copy_atomic = module._copy_atomic
 
         source = self.root / "source.rpscene"
         destination = self.root / "target" / "scenario.rpscene"

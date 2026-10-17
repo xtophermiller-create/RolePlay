@@ -372,13 +372,41 @@ if (!root || !docEl || !window.LifeCoreAsync) {
       }
     };
 
+    const uploadImageFile = async (file) => {
+      if (!imageUploadUrl) {
+        toast("Загрузка изображений недоступна", "error");
+        return null;
+      }
+      try {
+        const body = new FormData();
+        body.append("image", file);
+        const res = await fetch(imageUploadUrl, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "X-CSRFToken": csrfToken(),
+          },
+          body,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.message || data.error || `Ошибка ${res.status}`);
+        }
+        const url = String(data.url || "").trim();
+        if (!url) throw new Error("Сервер не вернул ссылку");
+        if (url.length > IMAGE_SRC_MAX) {
+          throw new Error("Ссылка слишком длинная");
+        }
+        return url;
+      } catch (err) {
+        toast(err.message || "Не удалось загрузить изображение", "error");
+        return null;
+      }
+    };
+
     const pickAndUploadImage = () =>
       new Promise((resolve) => {
-        if (!imageUploadUrl) {
-          toast("Загрузка изображений недоступна", "error");
-          resolve(null);
-          return;
-        }
         const input = document.createElement("input");
         input.type = "file";
         // Явные MIME + расширения: на Windows `image/*` даёт кривой фильтр проводника.
@@ -396,34 +424,7 @@ if (!root || !docEl || !window.LifeCoreAsync) {
             resolve(null);
             return;
           }
-          try {
-            const body = new FormData();
-            body.append("image", file);
-            const res = await fetch(imageUploadUrl, {
-              method: "POST",
-              credentials: "same-origin",
-              headers: {
-                Accept: "application/json",
-                "X-CSRFToken": csrfToken(),
-              },
-              body,
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || data.ok === false) {
-              throw new Error(
-                data.message || data.error || `Ошибка ${res.status}`
-              );
-            }
-            const url = String(data.url || "").trim();
-            if (!url) throw new Error("Сервер не вернул ссылку");
-            if (url.length > IMAGE_SRC_MAX) {
-              throw new Error("Ссылка слишком длинная");
-            }
-            resolve(url);
-          } catch (err) {
-            toast(err.message || "Не удалось загрузить изображение", "error");
-            resolve(null);
-          }
+          resolve(uploadImageFile(file));
         });
         input.addEventListener("cancel", () => {
           cleanup();
@@ -477,7 +478,7 @@ if (!root || !docEl || !window.LifeCoreAsync) {
           Underline,
           Image.configure({
             inline: false,
-            allowBase64: true,
+            allowBase64: false,
             HTMLAttributes: {
               class: "rp-image",
             },
@@ -493,6 +494,19 @@ if (!root || !docEl || !window.LifeCoreAsync) {
           attributes: {
             class: "tiptap",
             "aria-label": `Свободное поле — ${key}`,
+          },
+          handlePaste: (_view, event) => {
+            const file = Array.from(event.clipboardData?.files || []).find(
+              (item) => item.type.startsWith("image/")
+            );
+            if (!file) return false;
+
+            void uploadImageFile(file).then((src) => {
+              if (src) {
+                editor.chain().focus().setImage({ src, alt: "", title: "" }).run();
+              }
+            });
+            return true;
           },
         },
 

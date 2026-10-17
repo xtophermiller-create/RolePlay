@@ -95,7 +95,9 @@ release-local virtualenv, backs up, migrates, runs readiness, switches the
   -IdentityFile "$HOME\.ssh\id_ed25519"
 ```
 
-Or use the project wrapper with baked-in host settings:
+Or use the project wrapper with baked-in host settings. Copy
+`ops/deploy.example.ps1` to `ops/deploy.ps1` (and `ops/logs.example.ps1` to
+`ops/logs.ps1`) and fill in the real host values; both copies are git-ignored:
 
 ```powershell
 .\ops\deploy.ps1
