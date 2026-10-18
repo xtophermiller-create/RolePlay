@@ -13,8 +13,9 @@ def check_punctuation(
 ) -> Result:
     if not isinstance(value, str):
         return Err(meta='value is not a string', severity=Severity.INFO)
-    if PUNCTUATION in value:
-        return Err(meta='value has the punctuation', severity=Severity.INFO)
+    for x in PUNCTUATION:
+        if x in value:
+            return Err(meta='value has the punctuation', severity=Severity.INFO)
     return Ok()
 
 def check_whitespace(
@@ -23,6 +24,7 @@ def check_whitespace(
 ) -> Result:
     if not isinstance(value, str):
         return Err(meta='value is not a string', severity=Severity.INFO)
-    if WHITESPACE in value:
-        return Err(meta='value has the whitespace', severity=Severity.INFO)
+    for x in WHITESPACE:
+        if x in value:
+            return Err(meta='value has the whitespace', severity=Severity.INFO)
     return Ok()
