@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from sqlalchemy.exc import SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, check_punctuation, check_whitespace
 from ..app import db
-from src.app.domain import scenario as scenario_domain
+from ..domain import scenario as scenario_domain
 
 
 def create_scenario(
