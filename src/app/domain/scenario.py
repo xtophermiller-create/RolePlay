@@ -1,5 +1,22 @@
 from __future__ import annotations
 
+from sqlalchemy import MetaData, Table
+
+metadata = MetaData()
+scenarios = None
+
+
+def init_scenarios(engine):
+    ''' Зеркалим схему scenarios из db '''
+    global scenarios
+
+    scenarios = Table(
+        'scenarios',
+        metadata,
+        autoload_with=engine,
+    )
+
+
 DOC_TYPE = {
     'type': 'doc',
     'content': []
