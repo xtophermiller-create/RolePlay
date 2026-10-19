@@ -8,7 +8,9 @@ from .scenario import (DOC_TYPE,
                        NUM_LIST_TYPE,
                        MARKED_LIST_TYPE,
                        init_scenarios,
-                       scenarios)
+                       scenarios,
+                       VERSION,
+                       TITLE)
 from .room import init_rooms
 from .session import init_sessions
 from .user import init_users
@@ -27,5 +29,7 @@ __all__ = [
     'init_rooms',
     'init_sessions',
     'init_users',
-    'scenarios'
+    'scenarios',
+    'VERSION',
+    'TITLE'
 ]

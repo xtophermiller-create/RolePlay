@@ -20,6 +20,7 @@ def create_app():
         template_folder=web_dir / "templates",
         static_folder=web_dir / "static",
     ) # объявить app с путями к директориям страниц и static
+    app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"] # подключиться к db
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "echo": True,

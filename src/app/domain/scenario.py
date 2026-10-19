@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from sqlalchemy import MetaData, Table
 
+VERSION = 2
+TITLE = 'Unnamed scenario'
+
 metadata = MetaData()
 scenarios = None
 
