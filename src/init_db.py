@@ -25,8 +25,8 @@ def main() -> None:
 
     try:
         with engine.begin() as connection:
-            db.metadata.drop_all(bind=connection)
             execute_sql_file(connection, DB_DIR / "triggers_drop.sql")
+            db.metadata.drop_all(bind=connection)
             execute_sql_file(connection, DB_DIR / "functions_drop.sql")
 
             execute_sql_file(connection, DB_DIR / "functions.sql")

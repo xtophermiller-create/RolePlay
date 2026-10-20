@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from sqlalchemy import Identity, text, CheckConstraint, Integer, ForeignKey
-from .mixin import TimestampMixin
+from .mixin import TimestampMixin, pg_default
 from ...app import db
 from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import JSONB
@@ -17,9 +17,9 @@ LENGTH_CONTEXT1 = 512
 LENGTH_CONTEXT2 = 512
 
 SCENARIO_VERSION = 2
-SCENARIO_TITLE = "'Unnamed scenario'"
-SCENARIO_ACTOR1 = "'Role 1'"
-SCENARIO_ACTOR2 = "'Role 2'"
+SCENARIO_TITLE = 'Unnamed scenario'
+SCENARIO_ACTOR1 = 'Role 1'
+SCENARIO_ACTOR2 = 'Role 2'
 
 DOC_TYPE = {
     'type': 'doc',
@@ -78,11 +78,11 @@ class Scenario(db.Model, TimestampMixin):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='scenario_owner_id_fkey'), nullable=False, index=True)
 
-    title: Mapped[str] = mapped_column(String(LENGTH_TITLE), nullable=False, server_default=text(SCENARIO_TITLE))
+    title: Mapped[str] = mapped_column(String(LENGTH_TITLE), nullable=False, server_default=text(pg_default(SCENARIO_TITLE)))
     format_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text(str(SCENARIO_VERSION)))
 
-    actor1: Mapped[str] = mapped_column(String(LENGTH_ACTOR1), nullable=False, server_default=text(SCENARIO_ACTOR1))
-    actor2: Mapped[str] = mapped_column(String(LENGTH_ACTOR2), nullable=False, server_default=text(SCENARIO_ACTOR2))
+    actor1: Mapped[str] = mapped_column(String(LENGTH_ACTOR1), nullable=False, server_default=text(pg_default(SCENARIO_ACTOR1)))
+    actor2: Mapped[str] = mapped_column(String(LENGTH_ACTOR2), nullable=False, server_default=text(pg_default(SCENARIO_ACTOR2)))
     target1: Mapped[str | None] = mapped_column(String(LENGTH_TARGET1), nullable=True)
     target2: Mapped[str | None] = mapped_column(String(LENGTH_TARGET2), nullable=True)
     context1: Mapped[str | None] = mapped_column(String(LENGTH_CONTEXT1), nullable=True)
