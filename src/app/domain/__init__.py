@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .models import *
 
 __all__ = ['Room', 'LENGTH_STATUS', 'Session', 'User', 'LENGTH_LOGIN', 'LENGTH_PASSWORD', 'LENGTH_NICKNAME',

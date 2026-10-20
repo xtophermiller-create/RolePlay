@@ -13,8 +13,8 @@ class Room(db.Model, TimestampMixin):
     __tablename__ = "rooms"
     __table_args__ = (
         CheckConstraint(
-            '(actor1_user_id IS NOT NULL OR NOT ready1) '
-            'AND (actor2_user_id IS NOT NULL OR NOT ready2)',
+            '(actor1_id IS NOT NULL OR NOT ready1) '
+            'AND (actor2_id IS NOT NULL OR NOT ready2)',
             name='rooms_ready_check',
         ),
         CheckConstraint(
@@ -37,10 +37,10 @@ class Room(db.Model, TimestampMixin):
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='room_owner_id_fkey'), nullable=False)
     scenario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('scenarios.id', name='room_scenario_id_fkey', ondelete='SET NULL'), nullable=True)
     session_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('sessions.id', name='room_session_id_fkey', ondelete='SET NULL'), nullable=True, unique=True)
-    status: Mapped[str] = mapped_column(String(LENGTH_STATUS), nullable=False, server_default=text('lobby'))
-    player_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=array([], type=Integer))
+    status: Mapped[str] = mapped_column(String(LENGTH_STATUS), nullable=False, server_default=text("'lobby'"))
+    player_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=text("'{}'::integer[]"))
     actor1_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id', name='actor1_user_id_fkey', ondelete='SET NULL'), nullable=True)
     actor2_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id', name='actor2_user_id_fkey', ondelete='SET NULL'), nullable=True)
-    observer_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=array([], type=Integer))
+    observer_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=text("'{}'::integer[]"))
     ready1: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     ready2: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))

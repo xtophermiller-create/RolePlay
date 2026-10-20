@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .room import Room, LENGTH_STATUS
 from .session import Session
 from .user import User, LENGTH_LOGIN, LENGTH_PASSWORD, LENGTH_NICKNAME, LENGTH_AVATAR

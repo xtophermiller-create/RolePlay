@@ -17,9 +17,9 @@ LENGTH_CONTEXT1 = 512
 LENGTH_CONTEXT2 = 512
 
 SCENARIO_VERSION = 2
-SCENARIO_TITLE = 'Unnamed scenario'
-SCENARIO_ACTOR1 = 'Role 1'
-SCENARIO_ACTOR2 = 'Role 2'
+SCENARIO_TITLE = "'Unnamed scenario'"
+SCENARIO_ACTOR1 = "'Role 1'"
+SCENARIO_ACTOR2 = "'Role 2'"
 
 DOC_TYPE = {
     'type': 'doc',

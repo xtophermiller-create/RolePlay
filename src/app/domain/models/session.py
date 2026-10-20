@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Identity, CheckConstraint, Index, Integer, ForeignKey, String
+from sqlalchemy import Identity, CheckConstraint, Index, Integer, ForeignKey, String, text
 from .mixin import TimestampMixin
 from .scenario import (LENGTH_TITLE,
                        LENGTH_ACTOR1,
@@ -47,7 +47,7 @@ class Session(db.Model, TimestampMixin):
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='sessions_owner_id_fkey'), nullable=False, index=True)
     actor1_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='sessions_actor1_id_fkey'), nullable=False, index=True)
     actor2_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='sessions_actor2_id_fkey'), nullable=False, index=True)
-    observer_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=array([], type=Integer))
+    observer_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=text("'{}'::integer[]"))
 
     title: Mapped[str] = mapped_column(String(LENGTH_TITLE), nullable=False)
     format_version: Mapped[int] = mapped_column(Integer, nullable=False)

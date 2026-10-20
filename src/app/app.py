@@ -5,10 +5,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask
-from .domain import init_scenarios, init_rooms, init_users, init_sessions
-from .web import register_pages
 
 db = SQLAlchemy() # объявить db
+
+from .domain import models
+from .web import register_pages
 
 
 def create_app():
@@ -28,10 +29,5 @@ def create_app():
         "max_overflow": 10,
     } # настройки движка sqlalchemy через контекст app
     db.init_app(app) # инициализировать db к app
-    with app.app_context(): # инициализируем tables в db, для ORM
-        init_scenarios(db.engine)
-        init_rooms(db.engine)
-        init_users(db.engine)
-        init_sessions(db.engine)
     register_pages(app) # зарегистрировать web страницы к app
     return app # вернуть сам app
