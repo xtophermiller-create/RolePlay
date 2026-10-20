@@ -27,4 +27,4 @@ class User(db.Model, TimestampMixin):
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     is_guest: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
 
-    last_login: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
+    last_login_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))

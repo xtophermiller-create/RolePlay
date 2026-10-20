@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ARRAY, array
 
 LENGTH_STATUS = 16
+LENGTH_CODE = 8
 
 
 class Room(db.Model, TimestampMixin):
@@ -33,7 +34,7 @@ class Room(db.Model, TimestampMixin):
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    code: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    code: Mapped[str] = mapped_column(String(LENGTH_CODE), nullable=False, unique=True, index=True)
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='room_owner_id_fkey'), nullable=False)
     scenario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('scenarios.id', name='room_scenario_id_fkey', ondelete='SET NULL'), nullable=True)
     session_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('sessions.id', name='room_session_id_fkey', ondelete='SET NULL'), nullable=True, unique=True)
