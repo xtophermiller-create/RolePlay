@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from sqlalchemy import insert, select
 from sqlalchemy.exc import SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, check_punctuation, check_whitespace
-from ..app import db
-from ..domain import VERSION, TITLE, scenario as scenario_domain
+from ..domain import SCENARIO_VERSION, SCENARIO_TITLE
 
 
 def create_scenario(
@@ -17,7 +15,7 @@ def create_scenario(
     if not user_id or not isinstance(user_id, int):
         return Err(meta='user_id is none', severity=Severity.ERROR)
     if not title:
-        title = TITLE
+        title = SCENARIO_TITLE
     else:
         if not check_whitespace(value=title) or not check_punctuation(value=title):
             return Err(meta='title has whitespace or punctuation', severity=Severity.ERROR)
@@ -104,13 +102,13 @@ def update_scenario(
     ):
         return Err(meta='incorrect object type', severity=Severity.ERROR)
     if title is not None and not title:
-        title = TITLE
+        title = SCENARIO_TITLE
     if version is not None:
         if not version:
-            version = VERSION
-        if version < VERSION:
+            version = SCENARIO_VERSION
+        if version < SCENARIO_VERSION:
             return Err(meta='old version', severity=Severity.ERROR)
-        if version > VERSION:
+        if version > SCENARIO_VERSION:
             return Err(meta='not exist version', severity=Severity.ERROR)
     try:
 
