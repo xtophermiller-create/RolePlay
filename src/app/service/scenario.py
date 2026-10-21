@@ -4,28 +4,33 @@ from dataclasses import dataclass
 from sqlalchemy.exc import SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, check_punctuation, check_whitespace
 from ..domain import SCENARIO_VERSION, SCENARIO_TITLE
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def create_scenario(
         *,
         user_id: int | None = None,
         title: str | None = None,
-) -> Result:
+) -> Result[int]:
     ''' Создать пустой сценарий '''
     if not user_id or not isinstance(user_id, int):
-        return Err(meta='user_id is none', severity=Severity.ERROR)
+        return Err(meta='user_id is none or incorrect type', severity=Severity.ERROR)
     if not title:
         title = SCENARIO_TITLE
     else:
         if not check_whitespace(value=title) or not check_punctuation(value=title):
             return Err(meta='title has whitespace or punctuation', severity=Severity.ERROR)
     try:
+        scenario_id = 1
 
         # транзакция
 
-    except SQLAlchemyError:
+        return Ok(scenario_id)
+    except SQLAlchemyError as e:
         return Err(meta='db commit failed', severity=Severity.CRITICAL)
-    except Exception:
+    except Exception as e:
         return Err(meta='db unknown error', severity=Severity.CRITICAL)
 
 
@@ -43,9 +48,9 @@ def get_scenario(
 
         # транзакция
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         return Err(meta='db commit failed', severity=Severity.CRITICAL)
-    except Exception:
+    except Exception as e:
         return Err(meta='db unknown error', severity=Severity.CRITICAL)
 
 
@@ -114,9 +119,9 @@ def update_scenario(
 
         # транзакция
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         return Err(meta='db commit failed', severity=Severity.CRITICAL)
-    except Exception:
+    except Exception as e:
         return Err(meta='db unknown error', severity=Severity.CRITICAL)
 
 
@@ -134,7 +139,7 @@ def delete_scenario(
 
     # транзакция
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         return Err(meta='db commit failed', severity=Severity.CRITICAL)
-    except Exception:
+    except Exception as e:
         return Err(meta='db unknown error', severity=Severity.CRITICAL)
