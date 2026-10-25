@@ -2,36 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from sqlalchemy.exc import SQLAlchemyError
-from .helper import Result, Err, Ok, Severity, check_punctuation, check_whitespace
-from ..domain import SCENARIO_VERSION, SCENARIO_TITLE
-import logging
-
-log = logging.getLogger(__name__)
-
-
-def create_scenario(
-        *,
-        user_id: int | None = None,
-        title: str | None = None,
-) -> Result[int]:
-    ''' Создать пустой сценарий '''
-    if not user_id or not isinstance(user_id, int):
-        return Err(meta='user_id is none or incorrect type', severity=Severity.ERROR)
-    if not title:
-        title = SCENARIO_TITLE
-    else:
-        if not check_whitespace(value=title) or not check_punctuation(value=title):
-            return Err(meta='title has whitespace or punctuation', severity=Severity.ERROR)
-    try:
-        scenario_id = 1
-
-        # транзакция
-
-        return Ok(scenario_id)
-    except SQLAlchemyError as e:
-        return Err(meta='db commit failed', severity=Severity.CRITICAL)
-    except Exception as e:
-        return Err(meta='db unknown error', severity=Severity.CRITICAL)
+from .helper import Result, Err, Ok, Severity, validate_fields
+from ..domain import Scenario, SCENARIO_DEFAULT
 
 
 def get_scenario(
@@ -41,17 +13,45 @@ def get_scenario(
 ) -> Result:
     ''' Получить сценарий '''
     if not user_id or not isinstance(user_id, int):
-        return Err(meta='user_id is none', severity=Severity.ERROR)
+        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
     if not scenario_id or not isinstance(scenario_id, int):
-        return Err(meta='scenario_id is none', severity=Severity.ERROR)
+        return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
+
     try:
 
-        # транзакция
+        # транзакция берет сценарий по id scenario и user, нельзя выдать scenario не владельцу
 
     except SQLAlchemyError as e:
-        return Err(meta='db commit failed', severity=Severity.CRITICAL)
+        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
-        return Err(meta='db unknown error', severity=Severity.CRITICAL)
+        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
+
+def create_scenario(
+        *,
+        user_id: int | None = None,
+        title: str | None = None,
+) -> Result[int]:
+    ''' Создать пустой сценарий '''
+    if not user_id or not isinstance(user_id, int):
+        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
+    res = validate_fields(scenario_title=title)
+    title = res['scenario_title']['checked']
+    if not title:
+        return Err(meta=title.meta)
+    title = res['scenario_title']['normal'].value
+
+    try:
+        scenario: Scenario = None
+
+        # транзакция создаёт сценарий с указанными title и возвращает объект db Scenario
+
+        if scenario is None:
+            return Err(meta='Unknown creation error', severity=Severity.INFO)
+        return Ok(scenario)
+    except SQLAlchemyError as e:
+        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
+    except Exception as e:
+        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 @dataclass(frozen=True)
@@ -75,17 +75,26 @@ def update_scenario(
 ) -> Result:
     ''' Обновить сценарий '''
     if not user_id or not isinstance(user_id, int):
-        return Err(meta='user_id is none', severity=Severity.ERROR)
+        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
     if not scenario_id or not isinstance(scenario_id, int):
-        return Err(meta='scenario_id is none', severity=Severity.ERROR)
+        return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
     if not patch:
-        return Err(meta='patch is none', severity=Severity.ERROR)
+        return Err(meta="patch is missing", severity=Severity.ERROR)
     if not isinstance(patch, PatchScenario):
-        return Err(meta='patch is not PatchScenario', severity=Severity.ERROR)
+        return Err(meta="patch must be a PatchScenario instance", severity=Severity.ERROR)
+    if patch is None or not patch:
+        return Err(meta="patch is missing", severity=Severity.ERROR)
+
     title, version, actor1, actor2, target1, target2, context1, context2, doc1, doc2 = (
         patch.title, patch.version, patch.actor1, patch.actor2, patch.target1,
         patch.target2, patch.context1, patch.context2, patch.doc1, patch.doc2,
     )
+
+    res = validate_fields(
+        title=title, version=version, actor1=actor1, actor2=actor2, target1=target1, target2=target2, context1=context1,
+        context2=context2, doc1=doc1, doc2=doc2
+    )
+
     if all(
         value is None for value in (
             title, version,
@@ -95,7 +104,7 @@ def update_scenario(
             doc1, doc2
         )
     ):
-        return Ok(meta='empty patch')
+        return Ok(meta="No fields to update")
 
     if (
         not isinstance(title, str | None)
@@ -105,24 +114,35 @@ def update_scenario(
             or not isinstance(context1, str | None) or not isinstance(context2, str | None)
             or not isinstance(doc1, dict | None) or not isinstance(doc2, dict | None)
     ):
-        return Err(meta='incorrect object type', severity=Severity.ERROR)
+        return Err(meta="One or more fields have invalid types", severity=Severity.ERROR)
+
     if title is not None and not title:
         title = SCENARIO_TITLE
     if version is not None:
         if not version:
             version = SCENARIO_VERSION
         if version < SCENARIO_VERSION:
-            return Err(meta='old version', severity=Severity.ERROR)
+            return Err(meta="Scenario version is outdated", severity=Severity.ERROR)
         if version > SCENARIO_VERSION:
-            return Err(meta='not exist version', severity=Severity.ERROR)
+            return Err(meta="Scenario version is not supported", severity=Severity.ERROR)
+
+    for length, field, field_name in zip(
+        [LENGTH_TITLE, LENGTH_ACTOR1, LENGTH_ACTOR2, LENGTH_TARGET1,LENGTH_TARGET2, LENGTH_CONTEXT1, LENGTH_CONTEXT2],
+        [title, actor1, actor2, target1, target2, context1, context2],
+        ['title', 'actor1', 'actor2', 'target1', 'target2', 'context1', 'context2'],
+    ):
+        if isinstance(field, str):
+            if len(field.strip()) > length:
+                return Err(meta=f"{field_name} exceeds maximum length", severity=Severity.ERROR)
+
     try:
 
         # транзакция
 
     except SQLAlchemyError as e:
-        return Err(meta='db commit failed', severity=Severity.CRITICAL)
+        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
-        return Err(meta='db unknown error', severity=Severity.CRITICAL)
+        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 def delete_scenario(
@@ -132,14 +152,15 @@ def delete_scenario(
 ) -> Result:
     ''' Удалить сценарий '''
     if not user_id or not isinstance(user_id, int):
-        return Err(meta='user_id is none', severity=Severity.ERROR)
+        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
     if not scenario_id or not isinstance(scenario_id, int):
-        return Err(meta='scenario_id is none', severity=Severity.ERROR)
+        return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
+
     try:
 
     # транзакция
 
     except SQLAlchemyError as e:
-        return Err(meta='db commit failed', severity=Severity.CRITICAL)
+        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
-        return Err(meta='db unknown error', severity=Severity.CRITICAL)
+        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)

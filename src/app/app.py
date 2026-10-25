@@ -6,10 +6,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask
 from .service import configurate_logging
-import logging
 
 db = SQLAlchemy() # объявить db
-log = logging.getLogger(__name__)
 
 from .web import register_pages
 

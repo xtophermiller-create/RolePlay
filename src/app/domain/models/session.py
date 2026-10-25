@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import Identity, CheckConstraint, Index, Integer, ForeignKey, String, text
 from .mixin import TimestampMixin
-from .scenario import (LENGTH_TITLE,
-                       LENGTH_ACTOR1,
-                       LENGTH_ACTOR2,
-                       LENGTH_CONTEXT1,
-                       LENGTH_CONTEXT2,
-                       LENGTH_TARGET1,
-                       LENGTH_TARGET2)
+from .scenario import SCENARIO_LENGTH
 from ...app import db
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, array
@@ -49,14 +43,14 @@ class Session(db.Model, TimestampMixin):
     actor2_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='sessions_actor2_id_fkey'), nullable=False, index=True)
     observer_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=text("'{}'::integer[]"))
 
-    title: Mapped[str] = mapped_column(String(LENGTH_TITLE), nullable=False)
+    title: Mapped[str] = mapped_column(String(SCENARIO_LENGTH['MAX_TITLE']), nullable=False)
     format_version: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    actor1: Mapped[str] = mapped_column(String(LENGTH_ACTOR1), nullable=False)
-    actor2: Mapped[str] = mapped_column(String(LENGTH_ACTOR2), nullable=False)
-    target1: Mapped[str | None] = mapped_column(String(LENGTH_TARGET1), nullable=True)
-    target2: Mapped[str | None] = mapped_column(String(LENGTH_TARGET2), nullable=True)
-    context1: Mapped[str | None] = mapped_column(String(LENGTH_CONTEXT1), nullable=True)
-    context2: Mapped[str | None] = mapped_column(String(LENGTH_CONTEXT2), nullable=True)
+    actor1: Mapped[str] = mapped_column(String(SCENARIO_LENGTH['MAX_ACTOR1']), nullable=False)
+    actor2: Mapped[str] = mapped_column(String(SCENARIO_LENGTH['MAX_ACTOR2']), nullable=False)
+    target1: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_TARGET1']), nullable=True)
+    target2: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_TARGET2']), nullable=True)
+    context1: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_CONTEXT1']), nullable=True)
+    context2: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_CONTEXT2']), nullable=True)
     document1: Mapped[dict] = mapped_column(JSONB, nullable=False)
     document2: Mapped[dict] = mapped_column(JSONB, nullable=False)

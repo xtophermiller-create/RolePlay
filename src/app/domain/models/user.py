@@ -6,10 +6,15 @@ from sqlalchemy import text, Integer, Identity, String, DateTime, Boolean
 from ...app import db
 from .mixin import TimestampMixin
 
-LENGTH_LOGIN = 32
-LENGTH_PASSWORD = 256
-LENGTH_NICKNAME = 32
-LENGTH_AVATAR = 32
+USER_LENGTH = {
+    'MIN_LOGIN': 3,
+    'MAX_LOGIN': 32,
+    'MIN_PASSWORD': 9,
+    'MAX_PASSWORD': 32,
+    'MIN_NICKNAME': 3,
+    'MAX_NICKNAME': 32,
+    'MAX_AVATAR': 32,
+}
 
 
 class User(db.Model, TimestampMixin):
@@ -18,11 +23,11 @@ class User(db.Model, TimestampMixin):
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
 
-    login: Mapped[str] = mapped_column(String(LENGTH_LOGIN), nullable=False, unique=True)
-    password: Mapped[str] = mapped_column(String(LENGTH_PASSWORD), nullable=False)
+    login: Mapped[str] = mapped_column(String(USER_LENGTH['MAX_LOGIN']), nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String, nullable=False)
 
-    nickname: Mapped[str | None] = mapped_column(String(LENGTH_NICKNAME), nullable=True)
-    avatar: Mapped[str | None] = mapped_column(String(LENGTH_AVATAR), nullable=True)
+    nickname: Mapped[str | None] = mapped_column(String(USER_LENGTH['MAX_NICKNAME']), nullable=True)
+    avatar: Mapped[str | None] = mapped_column(String(USER_LENGTH['MAX_AVATAR']), nullable=True)
 
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     is_guest: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))

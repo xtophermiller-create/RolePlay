@@ -6,8 +6,11 @@ from ...app import db
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ARRAY, array
 
-LENGTH_STATUS = 16
-LENGTH_CODE = 8
+ROOM_LENGTH = {
+    'MAX_STATUS': 16,
+    'MIN_CODE': 8,
+    'MAX_CODE': 8
+}
 
 
 class Room(db.Model, TimestampMixin):
@@ -34,11 +37,11 @@ class Room(db.Model, TimestampMixin):
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    code: Mapped[str] = mapped_column(String(LENGTH_CODE), nullable=False, unique=True, index=True)
+    code: Mapped[str] = mapped_column(String(ROOM_LENGTH['MAX_CODE']), nullable=False, unique=True, index=True)
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='room_owner_id_fkey'), nullable=False)
     scenario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('scenarios.id', name='room_scenario_id_fkey', ondelete='SET NULL'), nullable=True)
     session_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('sessions.id', name='room_session_id_fkey', ondelete='SET NULL'), nullable=True, unique=True)
-    status: Mapped[str] = mapped_column(String(LENGTH_STATUS), nullable=False, server_default=text("'lobby'"))
+    status: Mapped[str] = mapped_column(String(ROOM_LENGTH['MAX_STATUS']), nullable=False, server_default=text("'lobby'"))
     player_ids: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=text("'{}'::integer[]"))
     actor1_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id', name='actor1_user_id_fkey', ondelete='SET NULL'), nullable=True)
     actor2_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id', name='actor2_user_id_fkey', ondelete='SET NULL'), nullable=True)

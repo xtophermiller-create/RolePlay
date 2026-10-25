@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .result import Result, Ok, Err, Severity, Action
-from .valid import check_whitespace, check_punctuation
+from .valid import validate_fields
 from .logger import configurate_logging
 
 __all__ = (
@@ -10,7 +10,6 @@ __all__ = (
     'Err',
     'Severity',
     'Action',
-    'check_whitespace',
-    'check_punctuation',
+    'validate_fields',
     'configurate_logging'
 )

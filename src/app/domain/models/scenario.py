@@ -8,56 +8,62 @@ from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-LENGTH_TITLE = 64
-LENGTH_ACTOR1 = 32
-LENGTH_ACTOR2 = 32
-LENGTH_TARGET1 = 256
-LENGTH_TARGET2 = 256
-LENGTH_CONTEXT1 = 512
-LENGTH_CONTEXT2 = 512
-
-SCENARIO_VERSION = 2
-SCENARIO_TITLE = 'Unnamed scenario'
-SCENARIO_ACTOR1 = 'Role 1'
-SCENARIO_ACTOR2 = 'Role 2'
-
-DOC_TYPE = {
-    'type': 'doc',
-    'content': []
+SCENARIO_LENGTH = {
+    'MAX_TITLE': 64,
+    'MAX_ACTOR1': 32,
+    'MAX_ACTOR2': 32,
+    'MAX_TARGET1': 256,
+    'MAX_TARGET2': 256,
+    'MAX_CONTEXT1': 512,
+    'MAX_CONTEXT2': 512,
 }
 
-HEADING_TYPE = {
-    'type': 'heading',
-    'content': ''
-}
-PARAGRAPH_TYPE = {
-    'type': 'paragraph',
-    'content': []
-}
-IMAGE_TYPE = {
-    'type': 'image',
-    'content': ''
-}
-NUM_LIST_TYPE = {
-    'type': 'numList',
-    'content': []
-}
-MARKED_LIST_TYPE = {
-    'type': 'markedList',
-    'content': []
-}
-SECTION_TYPE = {
-    'type': 'section',
-    'content': []
+SCENARIO_DEFAULT = {
+    'VERSION': 2,
+    'TITLE': 'Unnamed scenario',
+    'ACTOR1': 'Role 1',
+    'ACTOR2': 'Role 2'
 }
 
-TEXT_TYPE = {
-    'type': 'text',
-    'content': ''
-}
-HARD_BREAK_TYPE = {
-    'type': 'hardBreak',
-    'content': None
+SCENARIO_TYPES = {
+    'DOC': {
+        'type': 'doc',
+        'content': []
+    },
+
+    'HEADING': {
+        'type': 'heading',
+        'content': ''
+    },
+    'PARAGRAPH': {
+        'type': 'paragraph',
+        'content': []
+    },
+    'IMAGE': {
+        'type': 'image',
+        'content': ''
+    },
+    'NUM_LIST': {
+        'type': 'numList',
+        'content': []
+    },
+    'MARKED_LIST': {
+        'type': 'markedList',
+        'content': []
+    },
+    'SECTION': {
+        'type': 'section',
+        'content': []
+    },
+
+    'TEXT': {
+        'type': 'text',
+        'content': ''
+    },
+    'HARD_BREAK': {
+        'type': 'hardBreak',
+        'content': None
+    }
 }
 
 
@@ -78,17 +84,17 @@ class Scenario(db.Model, TimestampMixin):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id', name='scenario_owner_id_fkey'), nullable=False, index=True)
 
-    title: Mapped[str] = mapped_column(String(LENGTH_TITLE), nullable=False, server_default=text(pg_default(SCENARIO_TITLE)))
-    format_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text(str(SCENARIO_VERSION)))
+    title: Mapped[str] = mapped_column(String(SCENARIO_LENGTH['MAX_TITLE']), nullable=False, server_default=text(pg_default(SCENARIO_DEFAULT['TITLE'])))
+    format_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text(str(SCENARIO_DEFAULT['VERSION'])))
 
-    actor1: Mapped[str] = mapped_column(String(LENGTH_ACTOR1), nullable=False, server_default=text(pg_default(SCENARIO_ACTOR1)))
-    actor2: Mapped[str] = mapped_column(String(LENGTH_ACTOR2), nullable=False, server_default=text(pg_default(SCENARIO_ACTOR2)))
-    target1: Mapped[str | None] = mapped_column(String(LENGTH_TARGET1), nullable=True)
-    target2: Mapped[str | None] = mapped_column(String(LENGTH_TARGET2), nullable=True)
-    context1: Mapped[str | None] = mapped_column(String(LENGTH_CONTEXT1), nullable=True)
-    context2: Mapped[str | None] = mapped_column(String(LENGTH_CONTEXT2), nullable=True)
-    document1: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'" + json.dumps(DOC_TYPE) + "'::jsonb"))
-    document2: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'" + json.dumps(DOC_TYPE) + "'::jsonb"))
+    actor1: Mapped[str] = mapped_column(String(SCENARIO_LENGTH['MAX_ACTOR1']), nullable=False, server_default=text(pg_default(SCENARIO_DEFAULT['ACTOR1'])))
+    actor2: Mapped[str] = mapped_column(String(SCENARIO_LENGTH['MAX_ACTOR2']), nullable=False, server_default=text(pg_default(SCENARIO_DEFAULT['ACTOR2'])))
+    target1: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_TARGET1']), nullable=True)
+    target2: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_TARGET2']), nullable=True)
+    context1: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_CONTEXT1']), nullable=True)
+    context2: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_CONTEXT2']), nullable=True)
+    document1: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'" + json.dumps(SCENARIO_TYPES['DOC']) + "'::jsonb"))
+    document2: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'" + json.dumps(SCENARIO_TYPES['DOC']) + "'::jsonb"))
 
 
 EXAMPLE = {
