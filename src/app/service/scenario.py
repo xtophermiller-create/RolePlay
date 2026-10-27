@@ -3,14 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from sqlalchemy.exc import SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, validate_fields
-from ..domain import Scenario, SCENARIO_DEFAULT
+from ..domain import Scenario
 
 
 def get_scenario(
         *,
         user_id: int | None = None,
         scenario_id: int | None = None,
-) -> Result:
+) -> Result[Scenario | None]:
     ''' Получить сценарий '''
     if not user_id or not isinstance(user_id, int):
         return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
@@ -18,9 +18,13 @@ def get_scenario(
         return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
 
     try:
+        scenario: Scenario = None
 
         # транзакция берет сценарий по id scenario и user, нельзя выдать scenario не владельцу
 
+        if scenario is None:
+            return Err(meta='scenario not exist', severity=Severity.INFO)
+        return Ok(scenario)
     except SQLAlchemyError as e:
         return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
@@ -30,7 +34,7 @@ def create_scenario(
         *,
         user_id: int | None = None,
         title: str | None = None,
-) -> Result[int]:
+) -> Result[Scenario]:
     ''' Создать пустой сценарий '''
     if not user_id or not isinstance(user_id, int):
         return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
@@ -72,7 +76,7 @@ def update_scenario(
         user_id: int | None = None,
         scenario_id: int | None = None,
         patch: PatchScenario | None = None,
-) -> Result:
+) -> Result[Scenario]:
     ''' Обновить сценарий '''
     if not user_id or not isinstance(user_id, int):
         return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
@@ -85,15 +89,42 @@ def update_scenario(
     if patch is None or not patch:
         return Err(meta="patch is missing", severity=Severity.ERROR)
 
-    title, version, actor1, actor2, target1, target2, context1, context2, doc1, doc2 = (
-        patch.title, patch.version, patch.actor1, patch.actor2, patch.target1,
-        patch.target2, patch.context1, patch.context2, patch.doc1, patch.doc2,
+    res = validate_fields(
+        title=patch.title, version=patch.version, actor1=patch.actor1, actor2=patch.actor2, target1=patch.target1,
+        target2=patch.target2, context1=patch.context1, context2=patch.context2, doc1=patch.doc1, doc2=patch.doc2
     )
 
-    res = validate_fields(
-        title=title, version=version, actor1=actor1, actor2=actor2, target1=target1, target2=target2, context1=context1,
-        context2=context2, doc1=doc1, doc2=doc2
-    )
+    title = res['scenario_title']['checked']
+    version = res['scenario_version']['checked']
+    actor1 = res['scenario_actor1']['checked']
+    actor2 = res['scenario_actor2']['checked']
+    target1 = res['scenario_target1']['checked']
+    target2 = res['scenario_target2']['checked']
+    context1 = res['scenario_context1']['checked']
+    context2 = res['scenario_context2']['checked']
+    doc1 = res['scenario_doc1']['checked']
+    doc2 = res['scenario_doc2']['checked']
+
+    errors = []
+
+    for x in [title, version, actor1, actor2, target1, target2, context1, context2, doc1, doc2]:
+        if not x:
+            errors.append(x.meta)
+
+    if errors:
+        errors = 'Validation error : ' + ' | '.join([error.meta for error in errors])
+        return Err(meta=errors, severity=Severity.ERROR)
+
+    title = res['scenario_title']['normal'].value
+    version = res['scenario_version']['normal'].value
+    actor1 = res['scenario_actor1']['normal'].value
+    actor2 = res['scenario_actor2']['normal'].value
+    target1 = res['scenario_target1']['normal'].value
+    target2 = res['scenario_target2']['normal'].value
+    context1 = res['scenario_context1']['normal'].value
+    context2 = res['scenario_context2']['normal'].value
+    doc1 = res['scenario_doc1']['normal'].value
+    doc2 = res['scenario_doc2']['normal'].value
 
     if all(
         value is None for value in (
@@ -106,39 +137,14 @@ def update_scenario(
     ):
         return Ok(meta="No fields to update")
 
-    if (
-        not isinstance(title, str | None)
-            or (version is not None and type(version) is not int)
-            or not isinstance(actor1, str | None) or not isinstance(actor2, str | None)
-            or not isinstance(target1, str | None) or not isinstance(target2, str | None)
-            or not isinstance(context1, str | None) or not isinstance(context2, str | None)
-            or not isinstance(doc1, dict | None) or not isinstance(doc2, dict | None)
-    ):
-        return Err(meta="One or more fields have invalid types", severity=Severity.ERROR)
-
-    if title is not None and not title:
-        title = SCENARIO_TITLE
-    if version is not None:
-        if not version:
-            version = SCENARIO_VERSION
-        if version < SCENARIO_VERSION:
-            return Err(meta="Scenario version is outdated", severity=Severity.ERROR)
-        if version > SCENARIO_VERSION:
-            return Err(meta="Scenario version is not supported", severity=Severity.ERROR)
-
-    for length, field, field_name in zip(
-        [LENGTH_TITLE, LENGTH_ACTOR1, LENGTH_ACTOR2, LENGTH_TARGET1,LENGTH_TARGET2, LENGTH_CONTEXT1, LENGTH_CONTEXT2],
-        [title, actor1, actor2, target1, target2, context1, context2],
-        ['title', 'actor1', 'actor2', 'target1', 'target2', 'context1', 'context2'],
-    ):
-        if isinstance(field, str):
-            if len(field.strip()) > length:
-                return Err(meta=f"{field_name} exceeds maximum length", severity=Severity.ERROR)
-
     try:
+        scenario: Scenario = None
 
         # транзакция
 
+        if scenario is None:
+            return Err(meta='Unknown update error', severity=Severity.INFO)
+        return Ok(value=scenario, meta='Update success')
     except SQLAlchemyError as e:
         return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
@@ -160,6 +166,7 @@ def delete_scenario(
 
     # транзакция
 
+        return Ok(meta='Delete success')
     except SQLAlchemyError as e:
         return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:

@@ -83,6 +83,41 @@ async def _validator(plan: dict, kwargs: dict) -> dict:
         plan['scenario_actor2']['valid'] = Ok(meta='Actor2 successfully')
         return
     async def _scenario_target1(value):
+        if value is None:
+            plan['scenario_target1']['valid'] = Ok(meta='value is None')
+            return
+        if not isinstance(value, str):
+            plan['scenario_target1']['valid'] = Err(meta='value is not a string', severity=Severity.INFO)
+            return
+        plan['scenario_target1']['valid'] = Ok(meta='Target1 successfully')
+        return
+    async def _scenario_target2(value):
+        if value is None:
+            plan['scenario_target2']['valid'] = Ok(meta='value is None')
+            return
+        if not isinstance(value, str):
+            plan['scenario_target2']['valid'] = Err(meta='value is not a string', severity=Severity.INFO)
+            return
+        plan['scenario_target2']['valid'] = Ok(meta='Target2 successfully')
+        return
+    async def _scenario_context1(value):
+        if value is None:
+            plan['scenario_context1']['valid'] = Ok(meta='value is None')
+            return
+        if not isinstance(value, str):
+            plan['scenario_context1']['valid'] = Err(meta='value is not a string', severity=Severity.INFO)
+            return
+        plan['scenario_context1']['valid'] = Ok(meta='Context1 successfully')
+        return
+    async def _scenario_context2(value):
+        if value is None:
+            plan['scenario_context2']['valid'] = Ok(meta='value is None')
+            return
+        if not isinstance(value, str):
+            plan['scenario_context2']['valid'] = Err(meta='value is not a string', severity=Severity.INFO)
+            return
+        plan['scenario_context2']['valid'] = Ok(meta='Context2 successfully')
+        return
 
     tasks = []
 
@@ -143,6 +178,42 @@ async def _normalizer(plan: dict, kwargs: dict) -> dict:
         if not value:
             plan['scenario_actor2']['normal'] = SCENARIO_DEFAULT['ACTOR2']
         plan['scenario_actor2']['normal'] = Ok(value=value, meta='Actor2 successfully')
+        return
+    async def _scenario_target1(value):
+        if value is None:
+            plan['scenario_target1']['normal'] = Ok(value=None, meta='value is None')
+            return
+        value = value.strip()
+        if not value:
+            value = ''
+        plan['scenario_target1']['normal'] = Ok(value=value, meta='Target1 successfully')
+        return
+    async def _scenario_target2(value):
+        if value is None:
+            plan['scenario_target2']['normal'] = Ok(value=None, meta='value is None')
+            return
+        value = value.strip()
+        if not value:
+            value = ''
+        plan['scenario_target2']['normal'] = Ok(value=value, meta='Target2 successfully')
+        return
+    async def _scenario_context1(value):
+        if value is None:
+            plan['scenario_context1']['normal'] = Ok(value=None, meta='value is None')
+            return
+        value = value.strip()
+        if not value:
+            value = ''
+        plan['scenario_context1']['normal'] = Ok(value=value, meta='Context1 successfully')
+        return
+    async def _scenario_context2(value):
+        if value is None:
+            plan['scenario_context2']['normal'] = Ok(value=None, meta='value is None')
+            return
+        value = value.strip()
+        if not value:
+            value = ''
+        plan['scenario_context2']['normal'] = Ok(value=value, meta='Context2 successfully')
         return
 
     tasks = []
@@ -268,6 +339,62 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
             plan['scenario_actor2']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
             return
         plan['scenario_actor2']['checked'] = Ok(meta='Actor2 successfully')
+        return
+    async def _scenario_target1(value):
+        if value is None:
+            plan['scenario_target1']['checked'] = Ok(meta='value is None')
+            return
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        for x in value:
+            if x not in symbols:
+                plan['scenario_target1']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
+                return
+        if not len(value) <= SCENARIO_LENGTH['MAX_TARGET1']:
+            plan['scenario_target1']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
+            return
+        plan['scenario_target1']['checked'] = Ok(meta='Target1 successfully')
+        return
+    async def _scenario_target2(value):
+        if value is None:
+            plan['scenario_target2']['checked'] = Ok(meta='value is None')
+            return
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        for x in value:
+            if x not in symbols:
+                plan['scenario_target2']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
+                return
+        if not len(value) <= SCENARIO_LENGTH['MAX_TARGET2']:
+            plan['scenario_target2']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
+            return
+        plan['scenario_target2']['checked'] = Ok(meta='Target2 successfully')
+        return
+    async def _scenario_context1(value):
+        if value is None:
+            plan['scenario_context1']['checked'] = Ok(meta='value is None')
+            return
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        for x in value:
+            if x not in symbols:
+                plan['scenario_context1']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
+                return
+        if not len(value) <= SCENARIO_LENGTH['MAX_CONTEXT1']:
+            plan['scenario_context1']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
+            return
+        plan['scenario_context1']['checked'] = Ok(meta='Context1 successfully')
+        return
+    async def _scenario_context2(value):
+        if value is None:
+            plan['scenario_context2']['checked'] = Ok(meta='value is None')
+            return
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        for x in value:
+            if x not in symbols:
+                plan['scenario_context2']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
+                return
+        if not len(value) <= SCENARIO_LENGTH['MAX_CONTEXT2']:
+            plan['scenario_context2']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
+            return
+        plan['scenario_context2']['checked'] = Ok(meta='Context2 successfully')
         return
 
     tasks = []

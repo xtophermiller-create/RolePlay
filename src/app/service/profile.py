@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from sqlalchemy.exc import SQLAlchemyError
-
-from helper import validate_fields
-from .helper import Result, Err, Ok, Severity
+from .helper import Result, Err, Ok, Severity, validate_fields
 from ..domain import LENGTH_NICKNAME, LENGTH_AVATAR
 
 
