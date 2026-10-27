@@ -1,5 +1,6 @@
 from __future__ import annotations
 
 from .models import *
+from .schemes import *
 
-__all__ = ['Room', 'ROOM_LENGTH', 'Session', 'User', 'USER_LENGTH', 'Scenario', 'SCENARIO_LENGTH', 'SCENARIO_DEFAULT', 'SCENARIO_TYPES']
+__all__ = ['Session', 'User', 'USER_LENGTH', 'Scenario', 'SCENARIO_LENGTH', 'SCENARIO_DEFAULT', 'SCENARIO_TYPES', 'Room', 'RoomManager']

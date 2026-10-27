@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from sqlalchemy.exc import SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, validate_fields
-from ..domain import LENGTH_NICKNAME, LENGTH_AVATAR
+from ..domain import USER_LENGTH
 
 
 def get_profile(
         *,
         user_id: int | None = None,
-) -> Result:
+) -> Result[tuple[str, str]]:
     if not user_id or not isinstance(user_id, int):
         return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
 
@@ -53,11 +53,13 @@ def update_profile(
     if nickname is not None and not nickname:
         login = None
         try:
+
             # транзакция на получение login от userid
+
         except SQLAlchemyError as e:
             return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
         except Exception as e:
-            return Err(meta="Unexpected error during scenario retrieval", severity=Severity.CRITICAL)
+            return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
         nickname = login
 
     for length, field, field_name in zip(
@@ -76,7 +78,7 @@ def update_profile(
     except SQLAlchemyError as e:
         return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
-        return Err(meta="Unexpected error during scenario retrieval", severity=Severity.CRITICAL)
+        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 def delete_profile(
@@ -88,9 +90,10 @@ def delete_profile(
 
     try:
 
-    # транзакция
+        # транзакция проверяет user_id с owner_id в записи db, если всё ок, удаляет сценарий
 
+        return Ok()
     except SQLAlchemyError as e:
         return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
-        return Err(meta="Unexpected error during scenario retrieval", severity=Severity.CRITICAL)
+        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
