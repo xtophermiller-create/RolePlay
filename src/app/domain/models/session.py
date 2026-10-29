@@ -28,12 +28,7 @@ class Session(db.Model, TimestampMixin):
         CheckConstraint(
             "document2 IS NULL OR jsonb_typeof(document2) = 'object'::text",
             name='sessions_document2_object',
-        ),
-        Index(
-        "sessions_observer_ids_idx",
-        "observer_ids",
-        postgresql_using="gin",
-    ),
+        )
     )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)

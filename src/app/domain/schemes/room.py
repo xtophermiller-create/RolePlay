@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
 from ..models import SCENARIO_DEFAULT, SCENARIO_TYPES
@@ -16,13 +17,15 @@ class Room:
     owner_id: int
     scenario_id: int | None = None
 
-    player_ids: set[int] = field(default_factory=set)
+    players: dict[int, dict[str, str | None]] = field(default_factory=dict)
+
     observer_ids: set[int] = field(default_factory=set)
     actor1_id: set[int] = field(default_factory=set)
     actor2_id: set[int] = field(default_factory=set)
 
     is_started: bool = False
 
+    format_version: int = SCENARIO_DEFAULT['VERSION']
     title: str  = SCENARIO_DEFAULT['TITLE']
     actor1: str = SCENARIO_DEFAULT['ACTOR1']
     actor2: str = SCENARIO_DEFAULT['ACTOR2']
@@ -30,8 +33,8 @@ class Room:
     target2: str | None = None
     context1: str | None = None
     context2: str | None = None
-    doc1: dict = SCENARIO_TYPES['DOC']
-    doc2: dict = SCENARIO_TYPES['DOC']
+    doc1: dict = field(default_factory=lambda: deepcopy(SCENARIO_TYPES['DOC']))
+    doc2: dict = field(default_factory=lambda: deepcopy(SCENARIO_TYPES['DOC']))
 
 
 class RoomManager:
@@ -39,35 +42,3 @@ class RoomManager:
     def __init__(self) -> None:
         self._rooms: dict[str, Room] = {}
         self.lock = RLock()
-
-    # def _generate_code(self) -> str:
-    #     ''' Генерирует уникальный код  '''
-    #     while True:
-    #         code = ''.join(random.choices(CODE_CHARS, k=8))
-    #         if code not in self._rooms:
-    #             return code
-    #
-    # def create(self, owner_id: int) -> Room:
-    #     ''' Создать комнату с уникальным кодом '''
-    #     with self.lock:
-    #         code = self._generate_code()
-    #         room = Room(
-    #             code=code,
-    #             owner_id=owner_id,
-    #         )
-    #
-    #         self._rooms[code] = room
-    #         return room
-    #
-    # def get(self, code: str) -> Room | None:
-    #     ''' Получить комнату по коду '''
-    #     with self.lock:
-    #         return self._rooms.get(code)
-    #
-    # def remove(self, code: str) -> bool:
-    #     ''' Удалить комнату из оперативной памяти '''
-    #     with self.lock:
-    #         return self._rooms.pop(code, None) is not None
-    @property
-    def rooms(self):
-        return self._rooms

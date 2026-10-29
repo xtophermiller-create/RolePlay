@@ -5,6 +5,7 @@ import string
 from sqlalchemy.exc import SQLAlchemyError
 from ...domain import USER_LENGTH, SCENARIO_LENGTH, SCENARIO_DEFAULT
 from .result import Result, Ok, Err, Severity
+from ._doc import valid_doc, normal_doc, check_doc
 
 PUNCTUATION = string.punctuation
 WHITESPACE = string.whitespace
@@ -12,6 +13,11 @@ LETTERS = string.ascii_letters
 UP_LETTER = string.ascii_uppercase
 LOW_LETTERS = string.ascii_lowercase
 DIGITS = string.digits
+FILENAME_RESERVED = frozenset({
+    'CON', 'PRN', 'AUX', 'NUL',
+    *(f'COM{number}' for number in range(1, 10)),
+    *(f'LPT{number}' for number in range(1, 10)),
+})
 
 
 async def _validator(plan: dict, kwargs: dict) -> dict:
@@ -42,6 +48,30 @@ async def _validator(plan: dict, kwargs: dict) -> dict:
             plan['password']['valid'] = Err(meta='Not value', severity=Severity.INFO)
             return
         plan['password']['valid'] = Ok(meta='Password successfully')
+        return
+    async def _nickname(value):
+        if value is None:
+            plan['nickname']['valid'] = Ok(meta='value is None')
+            return
+        if not isinstance(value, str):
+            plan['nickname']['valid'] = Err(meta='value is not a string', severity=Severity.INFO)
+            return
+        if not value.strip():
+            plan['nickname']['valid'] = Err(meta='Not value', severity=Severity.INFO)
+            return
+        plan['nickname']['valid'] = Ok(meta='Nickname successfully')
+        return
+    async def _avatar(value):
+        if value is None:
+            plan['avatar']['valid'] = Ok(meta='value is None')
+            return
+        if not isinstance(value, str):
+            plan['avatar']['valid'] = Err(meta='value is not a string', severity=Severity.INFO)
+            return
+        if not value.strip():
+            plan['avatar']['valid'] = Err(meta='Not value', severity=Severity.INFO)
+            return
+        plan['avatar']['valid'] = Ok(meta='Avatar successfully')
         return
     async def _scenario_title(value):
         if value is None:
@@ -118,6 +148,12 @@ async def _validator(plan: dict, kwargs: dict) -> dict:
             return
         plan['scenario_context2']['valid'] = Ok(meta='Context2 successfully')
         return
+    async def _scenario_doc1(value):
+        plan['scenario_doc1']['valid'] = valid_doc(value, 'Doc1')
+        return
+    async def _scenario_doc2(value):
+        plan['scenario_doc2']['valid'] = valid_doc(value, 'Doc2')
+        return
 
     tasks = []
 
@@ -145,6 +181,20 @@ async def _normalizer(plan: dict, kwargs: dict) -> dict:
         return
     async def _password(value):
         plan['password']['normal'] = Ok(value=value, meta='Password successfully')
+        return
+    async def _nickname(value):
+        if value is None:
+            plan['nickname']['normal'] = Ok(value=None, meta='value is None')
+            return
+        value = value.strip().lower()
+        plan['nickname']['normal'] = Ok(value=value, meta='Nickname successfully')
+        return
+    async def _avatar(value):
+        if value is None:
+            plan['avatar']['normal'] = Ok(value=None, meta='value is None')
+            return
+        value = value.strip()
+        plan['avatar']['normal'] = Ok(value=value, meta='Avatar successfully')
         return
     async def _scenario_title(value):
         if value is None:
@@ -215,6 +265,12 @@ async def _normalizer(plan: dict, kwargs: dict) -> dict:
             value = ''
         plan['scenario_context2']['normal'] = Ok(value=value, meta='Context2 successfully')
         return
+    async def _scenario_doc1(value):
+        plan['scenario_doc1']['normal'] = normal_doc(value, 'Doc1')
+        return
+    async def _scenario_doc2(value):
+        plan['scenario_doc2']['normal'] = normal_doc(value, 'Doc2')
+        return
 
     tasks = []
 
@@ -249,7 +305,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
             return
         try:
 
-            # транзакция на проверку уникальности логина
+            pass  # транзакция на проверку уникальности логина
 
         except SQLAlchemyError as e:
             plan['login']['checked'] = Err(meta="Database transaction failed", severity=Severity.CRITICAL)
@@ -286,6 +342,46 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
             plan['password']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
             return
         plan['password']['checked'] = Ok(meta='Password successfully')
+        return
+    async def _nickname(value):
+        if value is None:
+            plan['nickname']['checked'] = Ok(meta='value is None')
+            return
+        symbols = LOW_LETTERS + DIGITS
+        for x in value:
+            if x not in symbols + '_-.':
+                plan['nickname']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
+                return
+        if not USER_LENGTH['MIN_NICKNAME'] <= len(value) <= USER_LENGTH['MAX_NICKNAME']:
+            plan['nickname']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
+            return
+        if value[0] not in symbols:
+            plan['nickname']['checked'] = Err(meta='First symbol in value should be letter', severity=Severity.INFO)
+            return
+        if value[-1] not in symbols:
+            plan['nickname']['checked'] = Err(meta='Last symbol in value should be letter', severity=Severity.INFO)
+            return
+        plan['nickname']['checked'] = Ok(meta='Nickname successfully')
+        return
+    async def _avatar(value):
+        if value is None:
+            plan['avatar']['checked'] = Ok(meta='value is None')
+            return
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюёЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ' + '_-.'
+        for x in value:
+            if x not in symbols:
+                plan['avatar']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
+                return
+        if not len(value) <= USER_LENGTH['MAX_AVATAR']:
+            plan['avatar']['checked'] = Err(meta='value exceeds maximum length', severity=Severity.INFO)
+            return
+        if value in {'.', '..'} or value.endswith('.'):
+            plan['avatar']['checked'] = Err(meta='value is not a valid filename', severity=Severity.INFO)
+            return
+        if value.split('.')[0].upper() in FILENAME_RESERVED:
+            plan['avatar']['checked'] = Err(meta='value is not a valid filename', severity=Severity.INFO)
+            return
+        plan['avatar']['checked'] = Ok(meta='Avatar successfully')
         return
     async def _scenario_title(value):
         if value is None:
@@ -396,6 +492,12 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
             return
         plan['scenario_context2']['checked'] = Ok(meta='Context2 successfully')
         return
+    async def _scenario_doc1(value):
+        plan['scenario_doc1']['checked'] = check_doc(value, 'Doc1')
+        return
+    async def _scenario_doc2(value):
+        plan['scenario_doc2']['checked'] = check_doc(value, 'Doc2')
+        return
 
     tasks = []
 
@@ -416,6 +518,8 @@ def validate_fields(**kwargs) -> dict:
         'login': '_login',
         'auth_login': '_auth_login',
         'password': '_password',
+        'nickname': '_nickname',
+        'avatar': '_avatar',
         'scenario_title': '_scenario_title',
         'scenario_version': '_scenario_version',
         'scenario_actor1': '_scenario_actor1',
@@ -424,6 +528,8 @@ def validate_fields(**kwargs) -> dict:
         'scenario_target2': '_scenario_target2',
         'scenario_context1': '_scenario_context1',
         'scenario_context2': '_scenario_context2',
+        'scenario_doc1': '_scenario_doc1',
+        'scenario_doc2': '_scenario_doc2',
     }
     results = dict()
 

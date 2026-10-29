@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, validate_fields
+from ..app import db
 from ..domain import Scenario
 
 
@@ -10,7 +12,7 @@ def get_scenario(
         *,
         user_id: int | None = None,
         scenario_id: int | None = None,
-) -> Result[Scenario | None]:
+) -> Result[Scenario]:
     ''' Получить сценарий '''
     if not user_id or not isinstance(user_id, int):
         return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
@@ -18,13 +20,19 @@ def get_scenario(
         return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
 
     try:
-        scenario: Scenario = None
-
-        # транзакция берет сценарий по id scenario и user, нельзя выдать scenario не владельцу
+        with db.session.begin():
+            scenario = db.session.execute(
+                select(Scenario).where(
+                    Scenario.id == scenario_id,
+                    Scenario.owner_id == user_id,
+                )
+            ).scalar_one_or_none()
+            if scenario is not None:
+                db.session.expunge(scenario)
 
         if scenario is None:
             return Err(meta='scenario not exist', severity=Severity.INFO)
-        return Ok(scenario)
+        return Ok(value=scenario)
     except SQLAlchemyError as e:
         return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
@@ -45,13 +53,16 @@ def create_scenario(
     title = res['scenario_title']['normal'].value
 
     try:
-        scenario: Scenario = None
-
-        # транзакция создаёт сценарий с указанными title и возвращает объект db Scenario
+        with db.session.begin():
+            scenario = db.session.execute(
+                insert(Scenario).values(owner_id=user_id, title=title).returning(Scenario)
+            ).scalar_one_or_none()
+            if scenario is not None:
+                db.session.expunge(scenario)
 
         if scenario is None:
             return Err(meta='Unknown creation error', severity=Severity.INFO)
-        return Ok(scenario)
+        return Ok(value=scenario)
     except SQLAlchemyError as e:
         return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
     except Exception as e:
@@ -137,10 +148,38 @@ def update_scenario(
     ):
         return Ok(meta="No fields to update")
 
-    try:
-        scenario: Scenario = None
+    values = {}
+    if title is not None:
+        values['title'] = title
+    if version is not None:
+        values['format_version'] = version
+    if actor1 is not None:
+        values['actor1'] = actor1
+    if actor2 is not None:
+        values['actor2'] = actor2
+    if target1 is not None:
+        values['target1'] = target1
+    if target2 is not None:
+        values['target2'] = target2
+    if context1 is not None:
+        values['context1'] = context1
+    if context2 is not None:
+        values['context2'] = context2
+    if doc1 is not None:
+        values['document1'] = doc1
+    if doc2 is not None:
+        values['document2'] = doc2
 
-        # транзакция
+    try:
+        with db.session.begin():
+            scenario = db.session.execute(
+                update(Scenario)
+                .where(Scenario.id == scenario_id, Scenario.owner_id == user_id)
+                .values(**values)
+                .returning(Scenario)
+            ).scalar_one_or_none()
+            if scenario is not None:
+                db.session.expunge(scenario)
 
         if scenario is None:
             return Err(meta='Unknown update error', severity=Severity.INFO)
@@ -163,8 +202,16 @@ def delete_scenario(
         return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
 
     try:
+        with db.session.begin():
+            result = db.session.execute(
+                delete(Scenario).where(
+                    Scenario.id == scenario_id,
+                    Scenario.owner_id == user_id,
+                )
+            )
 
-    # транзакция
+        if result.rowcount == 0:
+            return Err(meta='scenario not exist', severity=Severity.INFO)
 
         return Ok(meta='Delete success')
     except SQLAlchemyError as e:

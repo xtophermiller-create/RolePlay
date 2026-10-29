@@ -5,10 +5,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask
+
+db = SQLAlchemy()
+
 from .service import configurate_logging
-
-db = SQLAlchemy() # объявить db
-
 from .web import register_pages
 
 
