@@ -4,12 +4,38 @@ from copy import deepcopy
 import random
 import string
 from .profile import get_profile
-from .session import create_session
+from .session import create_session, PatchSession
 from .scenario import get_scenario
 from ..domain import RoomManager, Room, Scenario, SCENARIO_DEFAULT, SCENARIO_TYPES
 from .helper import Err, Ok, Result, Severity
+from time import monotonic, sleep
+from threading import Thread
 
 manager = RoomManager()
+ROOM_IDLE_TIMEOUT = 120 * 60  # 2 часа
+
+
+def cleanup_idle_rooms():
+    ''' Удаляем комнаты, бездействующие дольше установленного времени '''
+    now = monotonic()
+
+    with manager.lock:
+        for code, room in list(manager._rooms.items()):
+            if now - room.last_activity >= ROOM_IDLE_TIMEOUT:
+                manager._rooms.pop(code)
+
+
+def room_cleanup_worker():
+    while True:
+        sleep(60)
+        cleanup_idle_rooms()
+
+
+def start_room_cleanup():
+    Thread(
+        target=room_cleanup_worker,
+        daemon=True
+    ).start()
 
 
 def create_room(
@@ -19,6 +45,11 @@ def create_room(
     ''' Создаёт комнату с уникальным кодом '''
     if not user_id or not isinstance(user_id, int):
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
+
+    res = get_profile(user_id=user_id)
+    if not res:
+        return Err(meta='profile not found', severity=Severity.ERROR)
+    nickname, avatar = res.value
 
     with manager.lock:
         def _generate_code() -> str:
@@ -31,11 +62,6 @@ def create_room(
         for code, room in list(manager._rooms.items()):
             if room.owner_id == user_id:
                 manager._rooms.pop(code)
-
-        res = get_profile(user_id=user_id)
-        if not res:
-            return Err(meta='profile not found', severity=Severity.ERROR)
-        nickname, avatar = res.value
 
         player = {
             user_id: {
@@ -50,6 +76,7 @@ def create_room(
             owner_id=user_id,
             players=player,
             observer_ids={user_id},
+            last_activity=monotonic()
         )
 
         manager._rooms[code] = room
@@ -106,6 +133,11 @@ def connect(
     if not code or not isinstance(code, str):
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
 
+    res = get_profile(user_id=user_id)
+    if not res:
+        return Err(meta='profile not found', severity=Severity.ERROR)
+    nickname, avatar = res.value
+
     with manager.lock:
         room = manager._rooms.get(code)
         if room is None:
@@ -113,10 +145,10 @@ def connect(
         if room.is_started:
             return Err(meta='roleplay already started', severity=Severity.INFO)
 
-        res = get_profile(user_id=user_id)
-        if not res:
-            return Err(meta='profile not found', severity=Severity.ERROR)
-        nickname, avatar = res.value
+        room.players.pop(user_id, None)
+        room.observer_ids.discard(user_id)
+        room.actor1_id.discard(user_id)
+        room.actor2_id.discard(user_id)
 
         player = {
             'nickname': nickname,
@@ -125,6 +157,8 @@ def connect(
 
         room.players[user_id] = player
         room.observer_ids.add(user_id)
+
+        room.last_activity = monotonic()
 
         return Ok(value=room)
 
@@ -146,13 +180,15 @@ def leave(
 
         if user_id == room.owner_id:
             delete_room(user_id=user_id, code=code)
-            return Ok()
         else:
             room.players.pop(user_id, None)
             room.observer_ids.discard(user_id)
             room.actor1_id.discard(user_id)
             room.actor2_id.discard(user_id)
-            return Ok()
+
+        room.last_activity = monotonic()
+
+        return Ok()
 
 
 def choose_role(
@@ -178,6 +214,9 @@ def choose_role(
         if room.is_started:
             return Err(meta='roleplay already started', severity=Severity.INFO)
 
+        if not room.players.get(user_id):
+            return Err(meta='player not found', severity=Severity.INFO)
+
         room.observer_ids.discard(user_id)
         room.actor1_id.discard(user_id)
         room.actor2_id.discard(user_id)
@@ -193,6 +232,9 @@ def choose_role(
             return Ok()
 
         room.observer_ids.add(user_id)
+
+        room.last_activity = monotonic()
+
         return Err(meta='role not found', severity=Severity.ERROR)
 
 
@@ -224,7 +266,7 @@ def choose_scenario(
             return Err(meta='roleplay already started', severity=Severity.INFO)
 
         room.format_version = scenario.format_version
-        room.scenario_id = scenario.scenario_id
+        room.scenario_id = scenario.id
         room.title = scenario.title
         room.actor1 = scenario.actor1
         room.actor2 = scenario.actor2
@@ -232,8 +274,10 @@ def choose_scenario(
         room.target2 = scenario.target2
         room.context1 = scenario.context1
         room.context2 = scenario.context2
-        room.doc1 = deepcopy(scenario.doc1)
-        room.doc2 = deepcopy(scenario.doc2)
+        room.doc1 = deepcopy(scenario.document1)
+        room.doc2 = deepcopy(scenario.document2)
+
+        room.last_activity = monotonic()
 
         return Ok()
 
@@ -256,8 +300,25 @@ def start_session(
             return Err(meta='room not found', severity=Severity.ERROR)
         if room.is_started:
             return Err(meta='roleplay already started', severity=Severity.INFO)
+        if len(room.actor1_id) != 1:
+            return Err(meta='Can be only one actor', severity=Severity.ERROR)
+        if len(room.actor2_id) != 1:
+            return Err(meta='Can be only one actor', severity=Severity.ERROR)
+        # Проверяем уникален ли пользователь во всех группах
+        if (
+                room.actor1_id & room.actor2_id
+                or room.actor1_id & room.observer_ids
+                or room.actor2_id & room.observer_ids
+        ):
+            return Err(meta='Participant has multiple roles', severity=Severity.ERROR)
+        assigned_ids = room.actor1_id | room.actor2_id | room.observer_ids
+        if assigned_ids != set(room.players):
+            return Err(meta='Participants are not fully assigned to roles', severity=Severity.ERROR)
 
         room.is_started = True
+
+        room.last_activity = monotonic()
+
         return Ok()
 
 
@@ -278,9 +339,9 @@ def finish_session(
         if user_id != room.owner_id:
             return Err(meta='room not found', severity=Severity.ERROR)
         if not room.is_started:
-            return Err(meta='roleplay not active', severity=Severity.INFO)
+            return Err(meta='Roleplay not active', severity=Severity.INFO)
 
-        res = create_session(
+        patch = PatchSession(
             owner_id=room.owner_id,
             actor1_id=next(iter(room.actor1_id)),
             actor2_id=next(iter(room.actor2_id)),
@@ -293,8 +354,8 @@ def finish_session(
             target2=room.target2,
             context1=room.context1,
             context2=room.context2,
-            doc1=room.doc1,
-            doc2=room.doc2,
+            doc1=deepcopy(room.doc1),
+            doc2=deepcopy(room.doc2)
         )
 
         room.scenario_id = None
@@ -305,11 +366,15 @@ def finish_session(
         room.target2 = None
         room.context1 = None
         room.context2 = None
-        room.doc1 = SCENARIO_TYPES['DOC']
-        room.doc2 = SCENARIO_TYPES['DOC']
+        room.doc1 = deepcopy(SCENARIO_TYPES['DOC'])
+        room.doc2 = deepcopy(SCENARIO_TYPES['DOC'])
 
-        if not res:
-            room.is_started = False
-            return Err(meta=res.meta, severity=Severity.ERROR)
+        room.last_activity = monotonic()
+
         room.is_started = False
-        return Ok()
+
+    res = create_session(patch=patch)
+    if not res:
+        return Err(meta=res.meta, severity=Severity.ERROR)
+
+    return Ok()

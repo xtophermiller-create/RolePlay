@@ -303,16 +303,6 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value[-1] not in symbols:
             plan['login']['checked'] = Err(meta='Last symbol in value should be letter', severity=Severity.INFO)
             return
-        try:
-
-            pass  # транзакция на проверку уникальности логина
-
-        except SQLAlchemyError as e:
-            plan['login']['checked'] = Err(meta="Database transaction failed", severity=Severity.CRITICAL)
-            return
-        except Exception as e:
-            plan['login']['checked'] = Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
-            return
         plan['login']['checked'] = Ok(meta='Login successfully')
         return
     async def _auth_login(value):
@@ -401,13 +391,13 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_version']['checked'] = Ok(meta='value is None')
             return
-        if value < SCENARIO_DEFAULT['version']:
-            plan['scenario_version']['checker'] = Err(meta="Scenario version is outdated", severity=Severity.INFO)
+        if value < SCENARIO_DEFAULT['VERSION']:
+            plan['scenario_version']['checked'] = Err(meta="Scenario version is outdated", severity=Severity.INFO)
             return
         if SCENARIO_DEFAULT['version'] < value:
-            plan['scenario_version']['checker'] = Err(meta="Scenario version is not supported", severity=Severity.INFO)
+            plan['scenario_version']['checked'] = Err(meta="Scenario version is not supported", severity=Severity.INFO)
             return
-        plan['scenario_version']['checker'] = Ok(meta='Scenario version successfully')
+        plan['scenario_version']['checked'] = Ok(meta='Scenario version successfully')
     async def _scenario_actor1(value):
         if value is None:
             plan['scenario_actor1']['checked'] = Ok(meta='value is None')

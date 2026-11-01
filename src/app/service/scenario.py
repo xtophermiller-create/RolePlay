@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import SQLAlchemyError
-from .helper import Result, Err, Ok, Severity, validate_fields
+from .helper import Result, Err, Ok, Severity, validate_fields, txn
 from ..app import db
 from ..domain import Scenario
 
@@ -13,60 +13,111 @@ def get_scenario(
         user_id: int | None = None,
         scenario_id: int | None = None,
 ) -> Result[Scenario]:
-    ''' Получить сценарий '''
-    if not user_id or not isinstance(user_id, int):
-        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
-    if not scenario_id or not isinstance(scenario_id, int):
-        return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
+    ''' Получить сценарий как объект Scenario '''
+    # проверка user_id на тип int
+    if type(user_id) is not int:
+        return Err(meta="user_id is not int", severity=Severity.ERROR)
+    # проверка scenario_id на тип int
+    if type(scenario_id) is not int:
+        return Err(meta="scenario_id is not int", severity=Severity.ERROR)
 
+    # начало транзакции заключаем в try
     try:
-        with db.session.begin():
-            scenario = db.session.execute(
-                select(Scenario).where(
-                    Scenario.id == scenario_id,
-                    Scenario.owner_id == user_id,
-                )
+        with txn() as s:
+            scenario = s.execute(
+                select(Scenario).where(Scenario.id == scenario_id, Scenario.owner_id == user_id)
             ).scalar_one_or_none()
+
+            # отсоединяем scenario от сессии
             if scenario is not None:
-                db.session.expunge(scenario)
+                s.expunge(scenario)
 
         if scenario is None:
-            return Err(meta='scenario not exist', severity=Severity.INFO)
+            return Err(meta="Scenario not found", severity=Severity.ERROR)
+
         return Ok(value=scenario)
+
+    # критическая ошибка транзакции
     except SQLAlchemyError as e:
-        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
+        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    # критическая ошибка при транзакции
     except Exception as e:
-        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
+        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+
+
+def get_scenarios(
+        *,
+        user_id: int | None = None,
+) -> Result[list[Scenario] | str]:
+    ''' Возвращает все сценарии владельца по user_id '''
+    if type(user_id) is not int:
+        return Err(meta="user_id is not int", severity=Severity.ERROR)
+
+    # заключаем транзакцию в try
+    try:
+        with txn() as s:
+            raw_scenarios = s.execute(
+                select(Scenario).where(Scenario.owner_id == user_id)
+            ).scalars().all()
+
+            scenarios = []
+
+            for scenario in raw_scenarios:
+                if scenario is not None:
+                    s.expunge(scenario)
+                    scenarios.append(scenario)
+
+        if not scenarios:
+            return Ok(meta='Scenarios not found')
+
+        return Ok(value=scenarios)
+
+    # критическая ошибка транзакции
+    except SQLAlchemyError as e:
+        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    # критическая ошибка при транзакции
+    except Exception as e:
+        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+
 
 def create_scenario(
         *,
         user_id: int | None = None,
         title: str | None = None,
 ) -> Result[Scenario]:
-    ''' Создать пустой сценарий '''
-    if not user_id or not isinstance(user_id, int):
-        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
+    ''' Создать пустой сценарий (с title) '''
+    # проверка user_id на тип int
+    if type(user_id) is not int:
+        return Err(meta="user_id is not int", severity=Severity.ERROR)
+
+    # отправляем title на валидацию и обрабатываем результат
     res = validate_fields(scenario_title=title)
-    title = res['scenario_title']['checked']
-    if not title:
-        return Err(meta=title.meta)
+    res_title = res['scenario_title']['checked']
+    if not res_title:
+        return Err(meta=f'Validation errors: {res_title.meta}')
     title = res['scenario_title']['normal'].value
 
+    # заключаем транзакцию в try
     try:
-        with db.session.begin():
-            scenario = db.session.execute(
+        with txn() as s:
+            scenario = s.execute(
                 insert(Scenario).values(owner_id=user_id, title=title).returning(Scenario)
             ).scalar_one_or_none()
+
             if scenario is not None:
                 db.session.expunge(scenario)
 
         if scenario is None:
-            return Err(meta='Unknown creation error', severity=Severity.INFO)
+            return Err(meta='Scenario not found', severity=Severity.INFO)
+
         return Ok(value=scenario)
+
+    # критическая ошибка транзакции
     except SQLAlchemyError as e:
-        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
+        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    # критическая ошибка при транзакции
     except Exception as e:
-        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
+        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
 
 
 @dataclass(frozen=True)
@@ -89,41 +140,46 @@ def update_scenario(
         patch: PatchScenario | None = None,
 ) -> Result[Scenario]:
     ''' Обновить сценарий '''
-    if not user_id or not isinstance(user_id, int):
-        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
-    if not scenario_id or not isinstance(scenario_id, int):
-        return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
-    if not patch:
-        return Err(meta="patch is missing", severity=Severity.ERROR)
-    if not isinstance(patch, PatchScenario):
-        return Err(meta="patch must be a PatchScenario instance", severity=Severity.ERROR)
-    if patch is None or not patch:
-        return Err(meta="patch is missing", severity=Severity.ERROR)
+    # проверяем user_id на тип int
+    if type(user_id) is not int:
+        return Err(meta="user_id is not int", severity=Severity.ERROR)
+    # проверяем scenario_id на тип int
+    if type(scenario_id) is not int:
+        return Err(meta="scenario_id is not int", severity=Severity.ERROR)
+    # проверяем patch на тип PatchScenario
+    if type(patch) is not PatchScenario:
+        return Err(meta="patch is not PatchScenario", severity=Severity.ERROR)
 
+    # отправляем patch fields на валидацию и обрабатываем результат
     res = validate_fields(
-        title=patch.title, version=patch.version, actor1=patch.actor1, actor2=patch.actor2, target1=patch.target1,
-        target2=patch.target2, context1=patch.context1, context2=patch.context2, doc1=patch.doc1, doc2=patch.doc2
+        scenario_title=patch.title, scenario_version=patch.version, scenario_actor1=patch.actor1,
+        scenario_actor2=patch.actor2, scenario_target1=patch.target1, scenario_target2=patch.target2,
+        scenario_context1=patch.context1, scenario_context2=patch.context2, scenario_doc1=patch.doc1,
+        scenario_doc2=patch.doc2
     )
 
-    title = res['scenario_title']['checked']
-    version = res['scenario_version']['checked']
-    actor1 = res['scenario_actor1']['checked']
-    actor2 = res['scenario_actor2']['checked']
-    target1 = res['scenario_target1']['checked']
-    target2 = res['scenario_target2']['checked']
-    context1 = res['scenario_context1']['checked']
-    context2 = res['scenario_context2']['checked']
-    doc1 = res['scenario_doc1']['checked']
-    doc2 = res['scenario_doc2']['checked']
+    res_title = res['scenario_title']['checked']
+    res_version = res['scenario_version']['checked']
+    res_actor1 = res['scenario_actor1']['checked']
+    res_actor2 = res['scenario_actor2']['checked']
+    res_target1 = res['scenario_target1']['checked']
+    res_target2 = res['scenario_target2']['checked']
+    res_context1 = res['scenario_context1']['checked']
+    res_context2 = res['scenario_context2']['checked']
+    res_doc1 = res['scenario_doc1']['checked']
+    res_doc2 = res['scenario_doc2']['checked']
 
     errors = []
 
-    for x in [title, version, actor1, actor2, target1, target2, context1, context2, doc1, doc2]:
+    for x in [
+        res_title, res_version, res_actor1, res_actor2, res_target1,
+        res_target2, res_context1, res_context2, res_doc1, res_doc2
+    ]:
         if not x:
             errors.append(x.meta)
 
     if errors:
-        errors = 'Validation error : ' + ' | '.join([error.meta for error in errors])
+        errors = 'Validation error: ' + ' | '.join(errors)
         return Err(meta=errors, severity=Severity.ERROR)
 
     title = res['scenario_title']['normal'].value
@@ -137,6 +193,7 @@ def update_scenario(
     doc1 = res['scenario_doc1']['normal'].value
     doc2 = res['scenario_doc2']['normal'].value
 
+    # если все поля None - значит ничего менять не нужно, это не ошибка
     if all(
         value is None for value in (
             title, version,
@@ -148,6 +205,7 @@ def update_scenario(
     ):
         return Ok(meta="No fields to update")
 
+    # соединяем fields которые not None
     values = {}
     if title is not None:
         values['title'] = title
@@ -170,24 +228,30 @@ def update_scenario(
     if doc2 is not None:
         values['document2'] = doc2
 
+    # заключаем транзакцию в try
     try:
-        with db.session.begin():
-            scenario = db.session.execute(
+        with txn() as s:
+            scenario = s.execute(
                 update(Scenario)
                 .where(Scenario.id == scenario_id, Scenario.owner_id == user_id)
                 .values(**values)
                 .returning(Scenario)
             ).scalar_one_or_none()
+
             if scenario is not None:
                 db.session.expunge(scenario)
 
         if scenario is None:
-            return Err(meta='Unknown update error', severity=Severity.INFO)
+            return Err(meta='scenario not found', severity=Severity.INFO)
+
         return Ok(value=scenario, meta='Update success')
+
+    # критическая ошибка транзакции
     except SQLAlchemyError as e:
-        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
+        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    # критическая ошибка при транзакции
     except Exception as e:
-        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
+        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
 
 
 def delete_scenario(
@@ -196,25 +260,28 @@ def delete_scenario(
         scenario_id: int | None = None,
 ) -> Result:
     ''' Удалить сценарий '''
-    if not user_id or not isinstance(user_id, int):
-        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
-    if not scenario_id or not isinstance(scenario_id, int):
-        return Err(meta="scenario_id is missing or invalid", severity=Severity.ERROR)
+    # проверяем user_id на тип int
+    if type(user_id) is not int:
+        return Err(meta="user_id is not int", severity=Severity.ERROR)
+    # проверяем scenario_id на тип int
+    if type(scenario_id) is not int:
+        return Err(meta="scenario_id is not int", severity=Severity.ERROR)
 
+    # заключаем транзакцию в try
     try:
-        with db.session.begin():
-            result = db.session.execute(
-                delete(Scenario).where(
-                    Scenario.id == scenario_id,
-                    Scenario.owner_id == user_id,
-                )
+        with txn() as s:
+            res = s.execute(
+                delete(Scenario).where(Scenario.id == scenario_id, Scenario.owner_id == user_id)
             )
 
-        if result.rowcount == 0:
-            return Err(meta='scenario not exist', severity=Severity.INFO)
+        if res.rowcount == 0:
+            return Err(meta='Scenario not found', severity=Severity.INFO)
 
-        return Ok(meta='Delete success')
+        return Ok()
+
+    # критическая ошибка транзакции
     except SQLAlchemyError as e:
-        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
+        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    # критическая ошибка при транзакции
     except Exception as e:
-        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
+        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)

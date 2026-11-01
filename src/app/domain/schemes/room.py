@@ -4,7 +4,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
 from ..models import SCENARIO_DEFAULT, SCENARIO_TYPES
-import random
+from time import time
 import string
 
 CODE_CHARS = string.ascii_letters + string.digits
@@ -35,6 +35,8 @@ class Room:
     context2: str | None = None
     doc1: dict = field(default_factory=lambda: deepcopy(SCENARIO_TYPES['DOC']))
     doc2: dict = field(default_factory=lambda: deepcopy(SCENARIO_TYPES['DOC']))
+
+    last_activity: float = field(default_factory=time)
 
 
 class RoomManager:

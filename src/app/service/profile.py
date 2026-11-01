@@ -3,8 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
-from .helper import Result, Err, Ok, Severity, validate_fields
-from ..app import db
+from .helper import Result, Err, Ok, Severity, validate_fields, txn
 from ..domain import User
 
 
@@ -12,26 +11,32 @@ def get_profile(
         *,
         user_id: int | None = None,
 ) -> Result[tuple[str | None, str | None]]:
-    if not user_id or not isinstance(user_id, int):
-        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
+    ''' Возвращает по user_id : nickname и avatar '''
+    # проверка user_id на тип int
+    if type(user_id) is not int:
+        return Err(meta="user_id is not integer", severity=Severity.ERROR)
 
+    # начало транзакции заключаем в try
     try:
-        with db.session.begin():
-            row = db.session.execute(
-                select(User.nickname, User.avatar).where(User.id == user_id)
+        with txn() as s:
+            user = s.execute(
+                select(User.nickname, User.avatar).where(User.id == user_id),
             ).one_or_none()
 
-        if row is None:
-            return Err(meta="profile not found", severity=Severity.INFO)
+        if user is None:
+            return Err(meta="Profile not found", severity=Severity.INFO)
 
-        return Ok(value=(row.nickname, row.avatar))
+        return Ok(value=(user.nickname, user.avatar))
+
+    # критическая ошибка транзакции
     except SQLAlchemyError as e:
-        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
+        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    # критическая ошибка при транзакции
     except Exception as e:
-        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
+        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
 
 
-@dataclass
+@dataclass(frozen=True)
 class PatchProfile:
     nickname: str | None = None
     avatar: str | None = None
@@ -41,43 +46,51 @@ def update_profile(
         user_id: int | None = None,
         patch: PatchProfile | None = None,
 ) -> Result:
-    if not user_id or not isinstance(user_id, int):
-        return Err(meta="user_id is missing or invalid", severity=Severity.ERROR)
-    if not patch:
-        return Err(meta="patch is missing", severity=Severity.ERROR)
-    if not isinstance(patch, PatchProfile):
-        return Err(meta="patch must be a PatchProfile instance", severity=Severity.ERROR)
+    ''' Обновляет avatar и nickname в профиле '''
+    # проверка user_id на тип int
+    if type(user_id) is not int:
+        return Err(meta="user_id is not integer", severity=Severity.ERROR)
+    # проверка patch на тип PatchProfile
+    if type(patch) is not PatchProfile:
+        return Err(meta="patch is not PatchProfile", severity=Severity.ERROR)
 
-    nickname, avatar = patch.nickname, patch.avatar
+    # отправляем patch fields на валидацию и обрабатываем результат
+    res = validate_fields(nickname=patch.nickname, avatar=patch.avatar)
+    res_nickname, res_avatar = res['nickname']['checked'], res['avatar']['checked']
+    errors = []
+    for x in [res_nickname, res_avatar]:
+        if not x:
+            errors.append(x.meta)
+    if errors:
+        return Err(meta='Validation errors: ' + ' | '.join(errors), severity=Severity.ERROR)
+    nickname, avatar = res['nickname']['normal'].value, res['avatar']['normal'].value
 
-    res = validate_fields(nickname=nickname, avatar=avatar)
-    nickname = res['nickname']['checked']
-    avatar = res['avatar']['checked']
-    if not nickname or not avatar:
-        return Err(meta='Incorrect fields', severity=Severity.ERROR)
-    nickname = res['nickname']['normal'].value
-    avatar = res['avatar']['normal'].value
-
+    # если все поля None - значит ничего менять не нужно, это не ошибка
     if all(value is None for value in (nickname, avatar)):
         return Ok(meta="No fields to update")
 
+    # соединяем fields которые not None
     values = {}
     if nickname is not None:
         values['nickname'] = nickname
     if avatar is not None:
         values['avatar'] = avatar
 
+    # начало транзакции заключаем в try
     try:
-        with db.session.begin():
-            result = db.session.execute(
+        with txn() as s:
+            row = s.execute(
                 update(User).where(User.id == user_id).values(**values)
             )
 
-        if result.rowcount == 0:
-            return Err(meta="profile not found", severity=Severity.INFO)
+        if row.rowcount == 0:
+            return Err(meta="Profile not found", severity=Severity.INFO)
 
         return Ok()
+
+    # критическая ошибка транзакции
     except SQLAlchemyError as e:
-        return Err(meta="Database transaction failed", severity=Severity.CRITICAL)
+        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    # критическая ошибка при транзакции
     except Exception as e:
-        return Err(meta="Unexpected transaction error", severity=Severity.CRITICAL)
+        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
