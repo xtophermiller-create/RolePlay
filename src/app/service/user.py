@@ -1,17 +1,22 @@
 from __future__ import annotations
 
-from sqlalchemy import insert, select
-from sqlalchemy.exc import SQLAlchemyError
+import secrets
+
+from sqlalchemy import func, insert, select, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, validate_fields, txn
 from ..domain import User
 from werkzeug.security import check_password_hash, generate_password_hash
+
+# Тот же scrypt, что у настоящих паролей: сравнение занимает столько же времени, если логина нет.
+_DUMMY_PASSWORD_HASH = generate_password_hash(secrets.token_urlsafe(32), method="scrypt")
 
 
 def create_user(
         *,
         login: str | None = None,
         password: str | None = None,
-) -> Result[User]:
+) -> Result[tuple]:
     ''' Это типа регистрация, но по сути ведь создание пользователя :) '''
     # сразу отправляем все на валидацию и хеширование
     res = validate_fields(login=login, password=password)
@@ -32,21 +37,23 @@ def create_user(
         if user is None:
             return Err(meta="User not found", severity=Severity.INFO)
 
-        return Ok(value=user)
+        return Ok(value=(user.id, user.login, user.nickname, user.avatar, user.is_admin, user.is_guest))
 
+    except IntegrityError:
+        return Err(meta="Login is taken", severity=Severity.INFO)
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 def authenticate(
         *,
         login: str | None = None,
         password: str | None = None,
-) -> Result[User]:
+) -> Result[tuple]:
     ''' Авторизация '''
     # сразу отправляем все на валидацию и хеширование
     res = validate_fields(auth_login=login, password=password)
@@ -57,25 +64,31 @@ def authenticate(
         return Err(meta=f'Validation errors: {res_password.meta}')
     login, password = res['auth_login']['normal'].value, res['password']['normal'].value
 
-    # заключаем транзакцию в try
+    # чтение и проверка пароля не пишут в базу; время входа — только после совпадения
     try:
         with txn() as s:
             user = s.execute(
                 select(User).where(User.login == login)
             ).scalar_one_or_none()
+            stored = user.password if user is not None else _DUMMY_PASSWORD_HASH
 
-            stored = user.password if user is not None else None
+        password_matches = check_password_hash(stored, password)
+        if user is None or not password_matches:
+            return Err(meta='Incorrect login or password', severity=Severity.INFO)
 
-        if user is None:
-            return Err(meta='Incorrect login', severity=Severity.INFO)
-        if not check_password_hash(stored, password):
-            return Err(meta='Incorrect password', severity=Severity.INFO)
+        with txn() as s:
+            row = s.execute(
+                update(User).where(User.id == user.id).values(last_login_at=func.now())
+            )
 
-        return Ok(value=user)
+        if row.rowcount == 0:
+            return Err(meta="User not found", severity=Severity.INFO)
+
+        return Ok(value=(user.id, user.login, user.nickname, user.avatar, user.is_admin, user.is_guest))
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)

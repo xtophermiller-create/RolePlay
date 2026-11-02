@@ -1,8 +1,11 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
+{% import 'macros/forms.html' as forms %}
 {% block title %}Профиль{% endblock %}
-
 {% block content %}
-  <h1>Профиль</h1>
-  <p>Это твой будущий профиль</p>
+<h1>Профиль</h1>
+<form method="post" action="{{ url_for('profile.index') }}">
+  {{ forms.csrf_field() }}
+  <p><label>Никнейм <input type="text" name="nickname" value="{{ nickname or '' }}" required></label></p>
+  <button type="submit">Сохранить</button>
+</form>
 {% endblock %}

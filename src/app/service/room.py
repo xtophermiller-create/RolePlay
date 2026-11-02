@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from copy import deepcopy
 import random
 import string
@@ -43,7 +44,7 @@ def create_room(
         user_id: int | None = None,
 ) -> Result[Room]:
     ''' Создаёт комнату с уникальным кодом '''
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
 
     res = get_profile(user_id=user_id)
@@ -55,7 +56,7 @@ def create_room(
         def _generate_code() -> str:
             ''' Генерирует уникальный код  '''
             while True:
-                code = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+                code = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
                 if code not in manager._rooms:
                     return code
 
@@ -66,7 +67,8 @@ def create_room(
         player = {
             user_id: {
                 'nickname': nickname,
-                'avatar': avatar
+                'avatar': avatar,
+                'left': False,
             }
         }
 
@@ -89,9 +91,9 @@ def delete_room(
         user_id: int | None = None,
         code: str | None = None,
 ) -> Result:
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
 
     with manager.lock:
@@ -111,7 +113,7 @@ def get_room(
         *,
         code: str | None = None,
 ) -> Result[Room]:
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
 
     with manager.lock:
@@ -128,9 +130,9 @@ def connect(
         user_id: int | None = None,
         code: str | None = None,
 ) -> Result[Room]:
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
 
     res = get_profile(user_id=user_id)
@@ -152,7 +154,8 @@ def connect(
 
         player = {
             'nickname': nickname,
-            'avatar': avatar
+            'avatar': avatar,
+            'left': False
         }
 
         room.players[user_id] = player
@@ -168,9 +171,9 @@ def leave(
         user_id: int | None = None,
         code: str | None = None,
 ) -> Result:
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
 
     with manager.lock:
@@ -178,16 +181,20 @@ def leave(
         if room is None:
             return Err(meta='room not found', severity=Severity.INFO)
 
-        if user_id == room.owner_id:
-            delete_room(user_id=user_id, code=code)
-        else:
-            room.players.pop(user_id, None)
-            room.observer_ids.discard(user_id)
-            room.actor1_id.discard(user_id)
-            room.actor2_id.discard(user_id)
-
         room.last_activity = monotonic()
 
+        if user_id == room.owner_id:
+            delete_room(user_id=user_id, code=code)
+            return Ok()
+
+        if room.is_started and room.players.get(user_id, None):
+            room.players[user_id]['left'] = True
+            return Ok()
+
+        room.players.pop(user_id, None)
+        room.observer_ids.discard(user_id)
+        room.actor1_id.discard(user_id)
+        room.actor2_id.discard(user_id)
         return Ok()
 
 
@@ -198,11 +205,11 @@ def choose_role(
         role: int | None = None,
 ) -> Result:
     roles = [1, 2, 3]
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
-    if not role or not isinstance(role, int):
+    if type(role) is not int:
         return Err(meta='role is missing or invalid', severity=Severity.ERROR)
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
     if role not in roles:
         return Err(meta='role not found', severity=Severity.ERROR)
@@ -221,6 +228,8 @@ def choose_role(
         room.actor1_id.discard(user_id)
         room.actor2_id.discard(user_id)
 
+        room.last_activity = monotonic()
+
         if role == 1:
             room.actor1_id.add(user_id)
             return Ok()
@@ -232,23 +241,20 @@ def choose_role(
             return Ok()
 
         room.observer_ids.add(user_id)
-
-        room.last_activity = monotonic()
-
         return Err(meta='role not found', severity=Severity.ERROR)
 
-
+isinstance()
 def choose_scenario(
         *,
         user_id: int | None = None,
         code: str | None = None,
         scenario_id: int | None = None,
 ) -> Result:
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
-    if not scenario_id or not isinstance(scenario_id, int):
+    if type(scenario_id) is not int:
         return Err(meta='scenario_id is missing or invalid', severity=Severity.ERROR)
 
     scenario = get_scenario(user_id=user_id, scenario_id=scenario_id)
@@ -287,9 +293,9 @@ def start_session(
         user_id: int | None = None,
         code: str | None = None,
 ) -> Result:
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
 
     with manager.lock:
@@ -327,9 +333,9 @@ def finish_session(
         user_id: int | None = None,
         code: str | None = None,
 ) -> Result:
-    if not user_id or not isinstance(user_id, int):
+    if type(user_id) is not int:
         return Err(meta='user_id is missing or invalid', severity=Severity.ERROR)
-    if not code or not isinstance(code, str):
+    if type(code) is not str:
         return Err(meta='code is missing or invalid', severity=Severity.ERROR)
 
     with manager.lock:
@@ -368,6 +374,13 @@ def finish_session(
         room.context2 = None
         room.doc1 = deepcopy(SCENARIO_TYPES['DOC'])
         room.doc2 = deepcopy(SCENARIO_TYPES['DOC'])
+
+        for key, value in list(room.players.items()):
+            if value['left']:
+                room.players.pop(key, None)
+                room.observer_ids.discard(key)
+                room.actor1_id.discard(key)
+                room.actor2_id.discard(key)
 
         room.last_activity = monotonic()
 

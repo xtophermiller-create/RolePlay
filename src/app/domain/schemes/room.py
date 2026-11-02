@@ -3,8 +3,9 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
+from typing import Any
 from ..models import SCENARIO_DEFAULT, SCENARIO_TYPES
-from time import time
+from time import monotonic
 import string
 
 CODE_CHARS = string.ascii_letters + string.digits
@@ -17,7 +18,7 @@ class Room:
     owner_id: int
     scenario_id: int | None = None
 
-    players: dict[int, dict[str, str | None]] = field(default_factory=dict)
+    players: dict[int, dict[str, Any]] = field(default_factory=dict)
 
     observer_ids: set[int] = field(default_factory=set)
     actor1_id: set[int] = field(default_factory=set)
@@ -36,7 +37,7 @@ class Room:
     doc1: dict = field(default_factory=lambda: deepcopy(SCENARIO_TYPES['DOC']))
     doc2: dict = field(default_factory=lambda: deepcopy(SCENARIO_TYPES['DOC']))
 
-    last_activity: float = field(default_factory=time)
+    last_activity: float = field(default_factory=monotonic)
 
 
 class RoomManager:

@@ -29,11 +29,11 @@ def get_profile(
         return Ok(value=(user.nickname, user.avatar))
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 @dataclass(frozen=True)
@@ -89,8 +89,8 @@ def update_profile(
         return Ok()
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)

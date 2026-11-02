@@ -167,3 +167,89 @@ EXAMPLE = {
         }
     ]
 }
+
+
+
+EXAMPLE2 = {
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": {
+        "level": 1
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "SAMPLE"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "SAMPLE"
+        },
+        {
+          "type": "hardBreak"
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "attrs": {
+        "src": "SAMPLE.jpg"
+      }
+    },
+    {
+      "type": "orderedList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "SAMPLE"
+                },
+                {
+                  "type": "hardBreak"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "SAMPLE"
+                },
+                {
+                  "type": "hardBreak"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "content": []
+    }
+  ]
+}

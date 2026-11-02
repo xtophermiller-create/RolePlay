@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from .helper import Result, Err, Ok, Severity, validate_fields, txn
-from ..app import db
 from ..domain import Scenario
 
 
@@ -38,11 +37,11 @@ def get_scenario(
         return Ok(value=scenario)
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 def get_scenarios(
@@ -73,11 +72,11 @@ def get_scenarios(
         return Ok(value=scenarios)
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 def create_scenario(
@@ -105,7 +104,7 @@ def create_scenario(
             ).scalar_one_or_none()
 
             if scenario is not None:
-                db.session.expunge(scenario)
+                s.expunge(scenario)
 
         if scenario is None:
             return Err(meta='Scenario not found', severity=Severity.INFO)
@@ -113,11 +112,11 @@ def create_scenario(
         return Ok(value=scenario)
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 @dataclass(frozen=True)
@@ -239,7 +238,7 @@ def update_scenario(
             ).scalar_one_or_none()
 
             if scenario is not None:
-                db.session.expunge(scenario)
+                s.expunge(scenario)
 
         if scenario is None:
             return Err(meta='scenario not found', severity=Severity.INFO)
@@ -247,11 +246,11 @@ def update_scenario(
         return Ok(value=scenario, meta='Update success')
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 def delete_scenario(
@@ -280,8 +279,8 @@ def delete_scenario(
         return Ok()
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)

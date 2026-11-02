@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import string
+
 from sqlalchemy.exc import SQLAlchemyError
 from ...domain import USER_LENGTH, SCENARIO_LENGTH, SCENARIO_DEFAULT
 from .result import Result, Ok, Err, Severity
@@ -18,7 +19,6 @@ FILENAME_RESERVED = frozenset({
     *(f'COM{number}' for number in range(1, 10)),
     *(f'LPT{number}' for number in range(1, 10)),
 })
-
 
 async def _validator(plan: dict, kwargs: dict) -> dict:
     ''' Проверяет типизацию и самые базовые требования к данным '''
@@ -217,7 +217,7 @@ async def _normalizer(plan: dict, kwargs: dict) -> dict:
             return
         value = value.strip()
         if not value:
-            plan['scenario_actor1']['normal'] = SCENARIO_DEFAULT['ACTOR1']
+            value = SCENARIO_DEFAULT['ACTOR1']
         plan['scenario_actor1']['normal'] = Ok(value=value, meta='Actor1 successfully')
         return
     async def _scenario_actor2(value):
@@ -226,7 +226,7 @@ async def _normalizer(plan: dict, kwargs: dict) -> dict:
             return
         value = value.strip()
         if not value:
-            plan['scenario_actor2']['normal'] = SCENARIO_DEFAULT['ACTOR2']
+            value = SCENARIO_DEFAULT['ACTOR2']
         plan['scenario_actor2']['normal'] = Ok(value=value, meta='Actor2 successfully')
         return
     async def _scenario_target1(value):
@@ -377,7 +377,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_title']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + ' '
         for x in value:
             if x not in symbols:
                 plan['scenario_title']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -394,7 +394,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value < SCENARIO_DEFAULT['VERSION']:
             plan['scenario_version']['checked'] = Err(meta="Scenario version is outdated", severity=Severity.INFO)
             return
-        if SCENARIO_DEFAULT['version'] < value:
+        if SCENARIO_DEFAULT['VERSION'] < value:
             plan['scenario_version']['checked'] = Err(meta="Scenario version is not supported", severity=Severity.INFO)
             return
         plan['scenario_version']['checked'] = Ok(meta='Scenario version successfully')
@@ -402,7 +402,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_actor1']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + ' '
         for x in value:
             if x not in symbols:
                 plan['scenario_actor1']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -416,7 +416,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_actor2']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION
+        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + ' '
         for x in value:
             if x not in symbols:
                 plan['scenario_actor2']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)

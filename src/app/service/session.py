@@ -148,11 +148,11 @@ def create_session(
         return Ok()
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 # Сейчас получить сессию может только владелец, но в будущем смогут и другие. Когда изменим способ хранения списка пользователей.
@@ -182,11 +182,11 @@ def get_session(
         return Ok(value=session)
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
 
 
 # Сейчас получить сессию может только владелец, но в будущем смогут и другие. Когда изменим способ хранения списка пользователей.
@@ -219,8 +219,8 @@ def get_sessions(
         return Ok(value=sessions)
 
     # критическая ошибка транзакции
-    except SQLAlchemyError as e:
-        return Err(meta=f"Database transaction failed : {e}", severity=Severity.CRITICAL)
+    except SQLAlchemyError:
+        return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
-    except Exception as e:
-        return Err(meta=f"Unexpected transaction error : {e}", severity=Severity.CRITICAL)
+    except Exception:
+        return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)

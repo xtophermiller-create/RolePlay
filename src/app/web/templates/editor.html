@@ -1,8 +1,51 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block title %}Редактор{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', filename='js/vendor/socket.io.min.js') }}" defer></script>
+<script type="module" src="{{ url_for('static', filename='js/editor.js') }}"></script>
+{% endblock %}
+
+{% macro toolbar() %}
+<p data-toolbar>
+  <button type="button" data-command="bold" aria-pressed="false">Жирный</button>
+  <button type="button" data-command="italic" aria-pressed="false">Курсив</button>
+  <button type="button" data-command="strike" aria-pressed="false">Зачёркнутый</button>
+  <button type="button" data-command="underline" aria-pressed="false">Подчёркнутый</button>
+  <button type="button" data-command="link" aria-pressed="false">Ссылка</button>
+  <button type="button" data-command="orderedList" aria-pressed="false">Нумерованный список</button>
+  <button type="button" data-command="bulletList" aria-pressed="false">Маркированный список</button>
+  <button type="button" data-command="heading" aria-pressed="false">Заголовок H1</button>
+</p>
+{% endmacro %}
 
 {% block content %}
-  <h1>Редактор</h1>
-  <p>Текст сценария откроется здесь.</p>
+{# поля заполняет editor.js из черновика, присланного сервером по сокету #}
+<div data-scenario-id="{{ scenario_id }}">
+<h1>Редактор сценария</h1>
+<noscript><p>Для редактора нужен JavaScript.</p></noscript>
+<p><a href="{{ url_for('library.index') }}">К библиотеке</a></p>
+<p>Статус: <span data-status>подключение…</span></p>
+
+<p><label>Название <input type="text" data-field="title"></label></p>
+<p><label>Роль 1 <input type="text" data-field="actor1"></label></p>
+<p><label>Роль 2 <input type="text" data-field="actor2"></label></p>
+<p><label>Цель роли 1<br><textarea data-field="target1"></textarea></label></p>
+<p><label>Цель роли 2<br><textarea data-field="target2"></textarea></label></p>
+<p><label>Контекст роли 1<br><textarea data-field="context1"></textarea></label></p>
+<p><label>Контекст роли 2<br><textarea data-field="context2"></textarea></label></p>
+
+<h2>Документ роли 1</h2>
+<div data-document="doc1">
+  {{ toolbar() }}
+  <div data-editor></div>
+</div>
+
+<h2>Документ роли 2</h2>
+<div data-document="doc2">
+  {{ toolbar() }}
+  <div data-editor></div>
+</div>
+
+<p><button type="button" data-save>Сохранить</button></p>
+</div>
 {% endblock %}
