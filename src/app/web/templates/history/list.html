@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}История{% endblock %}
+{% block content %}
+<h1>История сессий</h1>
+{% if sessions %}
+<table>
+  <tr><th>Сценарий</th><th>Дата</th></tr>
+  {% for record in sessions %}
+  <tr>
+    <td><a href="{{ url_for('history.detail', session_id=record.id) }}">{{ record.title }}</a></td>
+    <td>{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>Сессий пока нет.</p>
+{% endif %}
+{% endblock %}

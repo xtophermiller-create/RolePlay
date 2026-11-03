@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ record.title }}{% endblock %}
+{% block head %}
+<script type="module" src="{{ url_for('static', filename='js/document-view.js') }}"></script>
+{% endblock %}
+{% block content %}
+<h1>{{ record.title }}</h1>
+<p>{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+<p><a href="{{ url_for('history.index') }}">К истории</a></p>
+<noscript><p>Для просмотра документов нужен JavaScript.</p></noscript>
+
+<h2>{{ record.actor1 }}</h2>
+<p>Цель: {{ record.target1 or '—' }}</p>
+<p>Контекст: {{ record.context1 or '—' }}</p>
+{# tojson безопасен в атрибуте в одинарных кавычках #}
+<div data-document-view='{{ record.document1|tojson }}'></div>
+
+<h2>{{ record.actor2 }}</h2>
+<p>Цель: {{ record.target2 or '—' }}</p>
+<p>Контекст: {{ record.context2 or '—' }}</p>
+<div data-document-view='{{ record.document2|tojson }}'></div>
+{% endblock %}

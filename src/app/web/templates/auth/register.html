@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% import 'macros/forms.html' as forms %}
+{% block title %}Регистрация{% endblock %}
+{% block content %}
+<h1>Регистрация</h1>
+<form method="post" action="{{ url_for('auth.register') }}">
+  {{ forms.csrf_field() }}
+  <p><label>Логин <input type="text" name="login" value="{{ login or '' }}" required autocomplete="username"></label></p>
+  <p><label>Пароль <input type="password" name="password" required autocomplete="new-password"></label></p>
+  <button type="submit">Зарегистрироваться</button>
+</form>
+<p><a href="{{ url_for('auth.login') }}">Вход</a></p>
+{% endblock %}

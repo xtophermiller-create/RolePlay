@@ -1,0 +1,21 @@
+{% macro csrf_field() %}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% endmacro %}
+
+{% macro errors_list(errors) %}
+{% if errors %}
+<ul>
+  {% for error in errors %}
+  <li>{{ error }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endmacro %}
+
+{# кнопка-действие: любое изменение состояния — только POST с CSRF #}
+{% macro action_button(action, label) %}
+<form method="post" action="{{ action }}">
+  {{ csrf_field() }}
+  <button type="submit">{{ label }}</button>
+</form>
+{% endmacro %}
