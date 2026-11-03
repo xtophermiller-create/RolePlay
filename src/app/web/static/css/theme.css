@@ -1,0 +1,62 @@
+/*
+  Цвета, радиусы и размеры контролов. Значения те же, что в проекте Knot.
+  Файлов Geologica там нет, поэтому остаётся запасной шрифт из той же цепочки.
+*/
+
+:root {
+  --color-bg: #141414;
+  --color-field: #212121;
+  --color-border: #313131;
+  --color-border-hover: #4a4a4a;
+  --color-muted: #6b6b6b;
+  --color-accent: #ffffff;
+  --color-danger: #c45c5c;
+  --color-positive: #89C45C;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-panel: 16px;
+  --radius-pill: 24px;
+
+  --control-pad-y: 8px;
+  --control-pad-x: 12px;
+  --control-font-size: 0.85rem;
+  --control-height: 38px;
+
+  --stack-gap: 8px;
+  --field-area-max: 12.5rem;
+
+  --font-ui: Geologica, "Segoe UI", Tahoma, sans-serif;
+  --z-topbar: 100;
+  --surface-panel: linear-gradient(
+    180deg,
+    rgba(33, 33, 33, 0.92) 0%,
+    rgba(20, 20, 20, 0.96) 100%
+  );
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: var(--font-ui);
+  background-color: var(--color-bg);
+  background-image: radial-gradient(1200px 520px at 50% -10%, rgba(255, 255, 255, 0.035), transparent 60%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--color-accent);
+  color-scheme: dark;
+}

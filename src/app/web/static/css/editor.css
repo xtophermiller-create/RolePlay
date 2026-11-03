@@ -1,0 +1,452 @@
+.screen--editor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
+  padding: 20px 22px 28px;
+}
+
+.scenario-editor {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 1360px;
+  min-height: 0;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.scenario-editor__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+.scenario-editor__top-lead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.scenario-editor__back {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(33, 33, 33, 0.55);
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.scenario-editor__back:hover,
+.scenario-editor__back:focus-visible {
+  border-color: var(--color-border-hover);
+  background: var(--color-field);
+  color: var(--color-accent);
+}
+
+.scenario-editor__back:focus {
+  outline: none;
+}
+
+.scenario-editor__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.scenario-editor__eyebrow {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scenario-editor__title {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  outline: none;
+}
+
+.scenario-editor__title::placeholder {
+  color: var(--color-muted);
+}
+
+.scenario-editor__title:disabled {
+  opacity: 0.55;
+}
+
+.scenario-editor__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scenario-editor__status {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: rgba(33, 33, 33, 0.55);
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scenario-editor__panes {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.role-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--surface-panel);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.role-pane:focus-within {
+  border-color: var(--color-border-hover);
+}
+
+.role-pane__head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.role-pane__index {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+
+.role-pane__identity {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.role-pane__badge {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 20, 0.65);
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.role-pane__label {
+  width: 100%;
+  margin: 0;
+  padding: 2px 0 0;
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 1.28rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  outline: none;
+}
+
+.role-pane__label::placeholder {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.role-pane__label:disabled {
+  opacity: 0.55;
+}
+
+.role-pane__meta {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.role-pane__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.role-pane__field-name {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.role-pane__textarea {
+  width: 100%;
+  min-height: 84px;
+  max-height: 180px;
+  margin: 0;
+  padding: var(--control-pad-y) var(--control-pad-x);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(20, 20, 20, 0.55);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--control-font-size);
+  line-height: 1.45;
+  outline: none;
+  resize: vertical;
+}
+
+.role-pane__textarea::placeholder {
+  color: var(--color-muted);
+}
+
+.role-pane__textarea:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+}
+
+.role-pane__textarea:focus:not(:disabled) {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg);
+}
+
+.role-pane__textarea:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.role-pane__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgba(20, 20, 20, 0.72);
+  overflow: hidden;
+}
+
+.role-pane__body:focus-within {
+  border-color: var(--color-border-hover);
+}
+
+.role-pane__toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgba(33, 33, 33, 0.95), rgba(26, 26, 26, 0.95));
+}
+
+.role-pane__tool-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.role-pane__tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.role-pane__tool:hover:not(:disabled) {
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-accent);
+}
+
+.role-pane__tool[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.role-pane__tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.role-pane__tool:disabled:hover {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-muted);
+}
+
+.role-pane__tool svg {
+  display: block;
+}
+
+.role-pane__tool-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 2px;
+  background: var(--color-border);
+}
+
+.role-pane__editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.role-pane__editor .ProseMirror {
+  min-height: 100%;
+  margin: 0;
+  padding: 16px 18px 28px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 0.92rem;
+  line-height: 1.62;
+  letter-spacing: 0.005em;
+  outline: none;
+}
+
+.role-pane__editor .ProseMirror-focused {
+  border: none;
+  background: transparent;
+}
+
+.role-pane__editor .ProseMirror p {
+  margin: 0 0 0.75em;
+}
+
+.role-pane__editor .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.role-pane__editor .ProseMirror h1 {
+  margin: 0.55em 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.28;
+}
+
+.role-pane__editor .ProseMirror ul,
+.role-pane__editor .ProseMirror ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.6em;
+}
+
+.role-pane__editor .ProseMirror ul {
+  list-style: disc;
+}
+
+.role-pane__editor .ProseMirror ol {
+  list-style: decimal;
+}
+
+.role-pane__editor .ProseMirror li {
+  margin: 0.18em 0;
+}
+
+.role-pane__editor .ProseMirror a {
+  color: var(--color-accent);
+}
+
+.scenario-editor__empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+@media (max-width: 980px) {
+  .screen--editor {
+    overflow: auto;
+    padding: 14px 12px 20px;
+  }
+
+  .scenario-editor {
+    overflow: visible;
+  }
+
+  .scenario-editor__title {
+    font-size: 1.15rem;
+  }
+
+  .scenario-editor__panes {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    overflow: visible;
+  }
+
+  .role-pane {
+    height: auto;
+    min-height: 70vh;
+    overflow: visible;
+  }
+}

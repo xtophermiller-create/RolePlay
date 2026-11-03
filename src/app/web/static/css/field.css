@@ -1,0 +1,52 @@
+.ui-field {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-field__input {
+  width: 100%;
+  height: var(--control-height);
+  margin: 0;
+  padding: var(--control-pad-y) var(--control-pad-x);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-field);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--control-font-size);
+  outline: none;
+}
+
+.ui-field__input::placeholder {
+  color: var(--color-muted);
+}
+
+.ui-field__input:hover:not(:disabled) {
+  border-color: var(--color-border-hover);
+}
+
+.ui-field__input:focus:not(:disabled) {
+  background: var(--color-bg);
+  border-color: var(--color-accent);
+}
+
+.ui-field__input:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+textarea.ui-field__input {
+  height: auto;
+  min-height: var(--control-height);
+  max-height: var(--field-area-max);
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  line-height: 1.35;
+  field-sizing: content;
+}
+
+select.ui-field__input {
+  cursor: pointer;
+}

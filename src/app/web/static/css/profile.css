@@ -1,0 +1,55 @@
+.screen--profile {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 18rem;
+}
+
+.profile__avatar {
+  display: block;
+  width: 128px;
+  height: 128px;
+  margin: 0 0 18px;
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-field);
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.profile__form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--stack-gap);
+  width: 100%;
+}
+
+.profile__form .ui-field {
+  width: 100%;
+}
+
+.profile__save {
+  margin-top: 8px;
+}
+
+.profile__error {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-danger);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: center;
+}

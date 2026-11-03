@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% import 'macros/forms.html' as forms %}
+{% block title %}Лобби{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lobby.css') }}">
+<script src="{{ url_for('static', filename='js/vendor/socket.io.min.js') }}" defer></script>
+<script type="module" src="{{ url_for('static', filename='js/room.js') }}"></script>
+{% endblock %}
+{% block header %}{% endblock %}
+{% block main_class %}screen screen--lobby{% endblock %}
+{% block notices %}{% endblock %}
+{% block content %}
+<section
+  class="session-lobby{% if room.is_started %} is-playing{% endif %}"
+  data-room-code="{{ room.code }}"
+  data-avatar="{{ url_for('static', filename='icons/dis-avatar.svg') }}"
+  data-crown="{{ url_for('static', filename='icons/crown.svg') }}"
+  data-me="{{ current_user.nickname or '' }}"
+>
+  <header class="session-lobby__top">
+    <div class="session-lobby__heading">
+      <p class="session-lobby__eyebrow" data-slot="stage">{% if room.is_started %}Ролевка{% else %}Лобби{% endif %}</p>
+      <h1 class="session-lobby__title" data-slot="title">Лобби</h1>
+    </div>
+    {% if current_user.id == room.owner_id %}
+    <button class="session-lobby__scenario" type="button" data-lobby-scenario {% if room.is_started %}hidden{% endif %}>Изменить сценарий</button>
+    {% endif %}
+    <p class="session-lobby__status" data-slot="status">подключение…</p>
+  </header>
+
+  <div class="session-lobby__wait" data-lobby-wait {% if room.is_started %}hidden{% endif %}>
+  <div class="session-lobby__code">
+    <span class="session-lobby__code-label">Ключ сессии</span>
+    <button class="session-lobby__code-btn" type="button" data-lobby-copy title="Скопировать ключ" aria-label="Скопировать ключ сессии">
+      <span class="session-lobby__code-value">{{ room.code }}</span>
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path fill="currentColor" d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3zm0 2H5v11h10v-2H8V9zm2-4v11h9V5h-9z"/>
+      </svg>
+    </button>
+  </div>
+
+  <noscript><p class="session-lobby__empty">Для комнаты нужен JavaScript.</p></noscript>
+  <div class="session-lobby__seats" data-slot="players"></div>
+
+  <div class="session-lobby__roles" aria-label="Выбор ролей">
+    {% for key, value, label in [('actor1', 1, 'actor1'), ('actor2', 2, 'actor2'), ('observer', 3, None)] %}
+    <article class="session-role" data-role-card="{{ key }}">
+      <p class="session-role__name">
+        {% if label %}<span data-slot="{{ label }}"></span>{% else %}Наблюдатель{% endif %}
+        {% if key == 'observer' %}<span class="session-role__count" data-role-count="observer" hidden>0</span>{% endif %}
+      </p>
+      <div class="session-role__avatars" data-role-avatars="{{ key }}"></div>
+      <form method="post" action="{{ url_for('room.role', code=room.code) }}">
+        {{ forms.csrf_field() }}
+        <input type="hidden" name="role" value="{{ value }}">
+        <button class="ui-btn ui-btn--pill session-role__take" type="submit" data-take="{{ key }}">Занять</button>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="session-lobby__actions">
+    {% if current_user.id == room.owner_id %}
+    <form method="post" action="{{ url_for('room.start', code=room.code) }}">
+      {{ forms.csrf_field() }}
+      <button class="ui-btn ui-btn--accent ui-btn--pill" type="submit" data-lobby-start>Начать</button>
+    </form>
+    {% endif %}
+  </div>
+  </div>
+
+  <div class="session-play" data-lobby-play {% if not room.is_started %}hidden{% endif %}>
+    <div class="session-play__briefs" data-play-briefs>
+      {% for key, index, badge, name, goal, context, doc in [
+        ('actor1', '01', 'Роль 1', 'actor1', 'target1', 'context1', 'doc1'),
+        ('actor2', '02', 'Роль 2', 'actor2', 'target2', 'context2', 'doc2'),
+      ] %}
+      <article class="play-role" data-play-role="{{ key }}">
+        <header class="play-role__head">
+          <span class="play-role__index">{{ index }}</span>
+          <div class="play-role__identity">
+            <span class="play-role__badge">{{ badge }}</span>
+            <h2 class="play-role__title" data-slot="{{ name }}"></h2>
+          </div>
+        </header>
+        <div class="play-role__meta">
+          <section class="play-role__field" data-play-field="{{ goal }}" hidden>
+            <span class="play-role__label">Цель</span>
+            <p class="play-role__field-body" data-slot="{{ goal }}"></p>
+          </section>
+          <section class="play-role__field" data-play-field="{{ context }}" hidden>
+            <span class="play-role__label">Контекст</span>
+            <p class="play-role__field-body" data-slot="{{ context }}"></p>
+          </section>
+        </div>
+        <section class="play-role__body-wrap" data-play-doc="{{ doc }}">
+          <div class="play-role__body-label"><span class="play-role__label">Информация</span></div>
+          <div class="play-prose" data-editor="{{ doc }}"></div>
+        </section>
+        <p class="play-role__empty" hidden>Нет данных для этой роли</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="session-lobby__actions">
+    {% if current_user.id == room.owner_id %}
+    <form method="post" action="{{ url_for('room.finish', code=room.code) }}" data-lobby-finish {% if not room.is_started %}hidden{% endif %}>
+      {{ forms.csrf_field() }}
+      <button class="ui-btn ui-btn--accent ui-btn--pill" type="submit">Завершить ролевку</button>
+    </form>
+    {% endif %}
+    <form class="session-lobby__leave" method="post" action="{{ url_for('room.leave_room', code=room.code) }}">
+      {{ forms.csrf_field() }}
+      <button class="ui-btn ui-btn--danger ui-btn--plain" type="submit">Покинуть</button>
+    </form>
+  </div>
+
+  <ul class="session-lobby__error" data-lobby-error {% if not errors %}hidden{% endif %}>
+    {% for error in errors or [] %}<li>{{ error }}</li>{% endfor %}
+  </ul>
+
+  {% if current_user.id == room.owner_id %}
+  <div class="session-lobby-scenario-popup" data-lobby-scenario-popup hidden>
+    <div class="session-lobby-scenario-popup__backdrop" data-lobby-scenario-close></div>
+    <div
+      class="session-lobby-scenario-popup__panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lobby-scenario-popup-title"
+    >
+      <section class="scenarios">
+        <header class="scenarios__top">
+          <button class="scenarios__back" type="button" data-lobby-scenario-close aria-label="Закрыть">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path fill="currentColor" d="M15.4 5.4a1 1 0 0 1 0 1.4L10.2 12l5.2 5.2a1 1 0 1 1-1.4 1.4l-5.9-5.9a1 1 0 0 1 0-1.4l5.9-5.9a1 1 0 0 1 1.4 0z"/>
+            </svg>
+          </button>
+          <div class="scenarios__heading">
+            <p class="scenarios__eyebrow">Сессия</p>
+            <h2 class="scenarios__title" id="lobby-scenario-popup-title">Выберите сценарий</h2>
+          </div>
+        </header>
+
+        {% if scenarios %}
+        <div class="scenarios-grid">
+          {% for scenario in scenarios %}
+          <form method="post" action="{{ url_for('room.scenario', code=room.code) }}" data-lobby-pick>
+            {{ forms.csrf_field() }}
+            <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+            <button
+              class="scenario-card scenario-card--pick{% if room.scenario_id == scenario.id %} is-current{% endif %}"
+              type="submit"
+              data-scenario-id="{{ scenario.id }}"
+              {% if room.scenario_id == scenario.id %}aria-current="true"{% endif %}
+            >
+              <span class="scenario-card__cover">
+                <img
+                  class="scenario-card__avatar"
+                  src="{{ url_for('static', filename='icons/scenario-avatar.svg') }}"
+                  alt=""
+                  width="200"
+                  height="200"
+                  draggable="false"
+                >
+              </span>
+              <span class="scenario-card__title">
+                <span class="scenario-card__title-text">{{ scenario.title or 'Без названия' }}</span>
+              </span>
+            </button>
+          </form>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="scenarios-grid">
+          <div class="scenarios-empty">
+            <p class="scenarios-empty__title">Пока пусто</p>
+            <p class="scenarios-empty__text">В библиотеке ещё нет сценариев.</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <ul class="session-lobby__error" data-lobby-error hidden></ul>
+      </section>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

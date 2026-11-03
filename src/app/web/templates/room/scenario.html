@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% import 'macros/forms.html' as forms %}
+{% block title %}Сценарий комнаты{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/field.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/page.css') }}">
+{% endblock %}
+{% block main_class %}screen screen--page{% endblock %}
+{% block notices %}{% endblock %}
+{% block content %}
+<div class="page">
+  <a class="page__back" href="{{ url_for('room.view', code=room.code) }}">Назад в лобби</a>
+  <h1 class="page__title">Сценарий</h1>
+  <p class="page__lead">Сейчас: {{ room.title }}</p>
+  {% if scenarios %}
+  <form class="page__form" method="post" action="{{ url_for('room.scenario', code=room.code) }}">
+    {{ forms.csrf_field() }}
+    <label class="ui-field">
+      <select class="ui-field__input" name="scenario_id" aria-label="Сценарий">
+        {% for scenario in scenarios %}
+        <option value="{{ scenario.id }}">{{ scenario.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="ui-btn ui-btn--positive ui-btn--pill" type="submit">Выбрать</button>
+  </form>
+  {% else %}
+  <p class="page__empty">Сценариев нет.</p>
+  <a class="ui-btn" href="{{ url_for('library.index') }}">Мои сценарии</a>
+  {% endif %}
+</div>
+{% endblock %}
