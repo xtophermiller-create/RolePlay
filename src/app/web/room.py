@@ -10,7 +10,7 @@ from ..service.room import (
 from ..service.scenario import get_scenarios
 from .auth import require_login
 from .helpers import err_message, err_status, form_int, render_error
-from .room_socket import broadcast_room
+from .room_socket import broadcast_room, not_in_room
 
 bp = Blueprint('room', __name__, url_prefix='/room')
 bp.before_request(require_login)
@@ -23,11 +23,18 @@ def _render_room(code: str, *, errors: list[str] | None = None, status: int = 20
     if not res:
         return render_error(res, status=404)
     room = res.value
-    if g.user.id not in room.players:
+    if not_in_room(room, g.user.id):
         abort(403)
 
     # состояние комнаты страница получает по сокету, здесь только каркас и формы
-    return render_template('room/view.html', room=room, errors=errors), status
+    scenarios = None
+    if g.user.id == room.owner_id:
+        listed = get_scenarios(user_id=g.user.id)
+        if listed:
+            scenarios = listed.value
+        else:
+            errors = [*(errors or []), err_message(listed)]
+    return render_template('room/view.html', room=room, scenarios=scenarios, errors=errors), status
 
 
 def _after_action(code: str, res: Result, *, next_url: str | None = None):
@@ -44,6 +51,11 @@ def create():
     if not res:
         return render_template('home.html', errors=[err_message(res)]), err_status(res)
     return redirect(url_for('room.view', code=res.value.code))
+
+
+@bp.get('/join')
+def join_form():
+    return redirect(url_for('home.index'))
 
 
 @bp.post('/join')

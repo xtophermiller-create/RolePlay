@@ -276,11 +276,15 @@ def delete_scenario(
         if res.rowcount == 0:
             return Err(meta='Scenario not found', severity=Severity.INFO)
 
-        return Ok()
-
     # критическая ошибка транзакции
     except SQLAlchemyError:
         return Err(meta=f"Database transaction failed", severity=Severity.CRITICAL)
     # критическая ошибка при транзакции
     except Exception:
         return Err(meta=f"Unexpected transaction error", severity=Severity.CRITICAL)
+
+    from .draft import delete_draft
+
+    delete_draft(user_id=user_id, scenario_id=scenario_id)
+
+    return Ok()

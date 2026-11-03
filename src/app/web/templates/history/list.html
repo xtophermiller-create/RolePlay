@@ -1,18 +1,54 @@
 {% extends 'base.html' %}
-{% block title %}История{% endblock %}
+{% block title %}История ролевок{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+{% endblock %}
+{% block main_class %}screen screen--page screen--scenarios{% endblock %}
+{% block notices %}{% endblock %}
 {% block content %}
-<h1>История сессий</h1>
-{% if sessions %}
-<table>
-  <tr><th>Сценарий</th><th>Дата</th></tr>
-  {% for record in sessions %}
-  <tr>
-    <td><a href="{{ url_for('history.detail', session_id=record.id) }}">{{ record.title }}</a></td>
-    <td>{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-  </tr>
-  {% endfor %}
-</table>
-{% else %}
-<p>Сессий пока нет.</p>
-{% endif %}
+<section class="scenarios">
+  <header class="scenarios__top">
+    <div class="scenarios__heading">
+      <p class="scenarios__eyebrow">История</p>
+      <h1 class="scenarios__title">История ролевок</h1>
+    </div>
+  </header>
+
+  {% if sessions %}
+  <div class="history-table-wrap">
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th scope="col">Дата сессии</th>
+          <th scope="col">Название сценария</th>
+          <th scope="col">actor1</th>
+          <th scope="col">actor2</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in sessions %}
+        <tr>
+          <td class="history-table__muted">
+            <time datetime="{{ record.created_at.isoformat() }}">{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
+          </td>
+          <td>
+            <a class="history-table__link" href="{{ url_for('history.detail', session_id=record.id) }}">{{ record.title }}</a>
+          </td>
+          <td>{{ record.actor1 }}</td>
+          <td>{{ record.actor2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="scenarios-grid">
+    <div class="scenarios-empty">
+      <p class="scenarios-empty__title">Пока пусто</p>
+      <p class="scenarios-empty__text">Завершённые ролевки появятся здесь.</p>
+    </div>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}

@@ -5,11 +5,6 @@ import { createDocumentEditor, isAllowedLink, setDocument } from './vendor/tipta
 const SYNC_DELAY = 1000
 const ACK_TIMEOUT = 10000
 
-const page = document.querySelector('[data-scenario-id]')
-if (page) {
-  start(page)
-}
-
 function start(page) {
   const scenarioId = Number(page.dataset.scenarioId)
   const statusNode = page.querySelector('[data-status]')
@@ -115,18 +110,53 @@ function start(page) {
     toolbars.push(bindToolbar(container.querySelector('[data-toolbar]'), editor, setStatus))
   }
 
+  // сначала дописать черновик в память, затем save_draft в базу
+  const persist = () => flush().then(() => new Promise((resolve) => {
+    socket.timeout(ACK_TIMEOUT).emit('save', { scenario_id: scenarioId }, (timeoutError, ack) => {
+      if (timeoutError) {
+        setStatus('сервер не ответил')
+        resolve(false)
+      } else if (ack?.ok) {
+        setStatus('сохранено')
+        resolve(true)
+      } else {
+        setStatus(ack?.error ?? 'ошибка')
+        resolve(false)
+      }
+    })
+  }))
+
   page.querySelector('[data-save]').addEventListener('click', () => {
     setStatus('сохранение…')
-    flush().then(() => {
-      socket.timeout(ACK_TIMEOUT).emit('save', { scenario_id: scenarioId }, (timeoutError, ack) => {
-        if (timeoutError) {
-          setStatus('сервер не ответил')
-        } else {
-          setStatus(ack?.ok ? 'сохранено' : ack?.error ?? 'ошибка')
-        }
-      })
-    })
+    persist()
   })
+
+  // явный уход из интерфейса: дождаться записи в базу и только потом открыть страницу
+  let leaving = false
+  const leaveVia = (event) => {
+    const link = event.currentTarget
+    if (!(link instanceof HTMLAnchorElement)) {
+      return
+    }
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return
+    }
+    event.preventDefault()
+    if (leaving) {
+      return
+    }
+    leaving = true
+    setStatus('сохранение…')
+    persist().then((saved) => {
+      if (saved) {
+        window.location.assign(link.href)
+        return
+      }
+      leaving = false
+    })
+  }
+  page.querySelector('.scenario-editor__back')?.addEventListener('click', leaveVia)
+  document.querySelector('.ui-topbar .ui-btn--top')?.addEventListener('click', leaveVia)
 
   // ушёл со страницы — передать последнее; браузер предупредит, если что-то не дошло
   window.addEventListener('beforeunload', (event) => {
@@ -196,7 +226,7 @@ function bindToolbar(toolbar, editor, setStatus) {
     })
   }
 
-  // без CSS нажатое состояние видно только в aria-pressed
+  // нажатое состояние отмечает кнопка через aria-pressed
   const refresh = () => {
     for (const button of buttons) {
       const name = button.dataset.command
@@ -208,4 +238,9 @@ function bindToolbar(toolbar, editor, setStatus) {
   editor.on('transaction', refresh)
   refresh()
   return refresh
+}
+
+const page = document.querySelector('[data-scenario-id]')
+if (page) {
+  start(page)
 }

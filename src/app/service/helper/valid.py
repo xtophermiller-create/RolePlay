@@ -8,6 +8,7 @@ from ...domain import USER_LENGTH, SCENARIO_LENGTH, SCENARIO_DEFAULT
 from .result import Result, Ok, Err, Severity
 from ._doc import valid_doc, normal_doc, check_doc
 
+RUSSIA_LETTERS = 'йцукеёнгшщзхъфывапролджэячсмитьбюЙЦУКЕЁНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ'
 PUNCTUATION = string.punctuation
 WHITESPACE = string.whitespace
 LETTERS = string.ascii_letters
@@ -357,7 +358,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['avatar']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюёЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ' + '_-.'
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + '_-.'
         for x in value:
             if x not in symbols:
                 plan['avatar']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -377,7 +378,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_title']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + ' '
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + PUNCTUATION + ' '
         for x in value:
             if x not in symbols:
                 plan['scenario_title']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -402,7 +403,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_actor1']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + ' '
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + PUNCTUATION + ' '
         for x in value:
             if x not in symbols:
                 plan['scenario_actor1']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -416,7 +417,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_actor2']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + ' '
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + PUNCTUATION + ' '
         for x in value:
             if x not in symbols:
                 plan['scenario_actor2']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -430,7 +431,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_target1']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + PUNCTUATION + WHITESPACE
         for x in value:
             if x not in symbols:
                 plan['scenario_target1']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -444,7 +445,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_target2']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + PUNCTUATION + WHITESPACE
         for x in value:
             if x not in symbols:
                 plan['scenario_target2']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -458,7 +459,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_context1']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + PUNCTUATION + WHITESPACE
         for x in value:
             if x not in symbols:
                 plan['scenario_context1']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
@@ -472,7 +473,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['scenario_context2']['checked'] = Ok(meta='value is None')
             return
-        symbols = LETTERS + DIGITS + 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ' + PUNCTUATION + WHITESPACE
+        symbols = LETTERS + DIGITS + RUSSIA_LETTERS + PUNCTUATION + WHITESPACE
         for x in value:
             if x not in symbols:
                 plan['scenario_context2']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)

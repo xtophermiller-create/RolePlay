@@ -20,6 +20,32 @@ class CurrentUser:
     id: int
     nickname: str | None
     avatar: str | None
+    login: str
+
+
+def _remember(user: CurrentUser) -> None:
+    ''' Положить профиль в подписанную cookie: страница больше не спрашивает его у базы '''
+    session['profile'] = {
+        'nickname': user.nickname,
+        'avatar': user.avatar,
+        'login': user.login,
+    }
+
+
+def _cached_user(user_id: int) -> CurrentUser | None:
+    profile = session.get('profile')
+    if not isinstance(profile, dict):
+        return None
+    login = profile.get('login')
+    nickname = profile.get('nickname')
+    avatar = profile.get('avatar')
+    if not isinstance(login, str) or not login:
+        return None
+    if nickname is not None and not isinstance(nickname, str):
+        return None
+    if avatar is not None and not isinstance(avatar, str):
+        return None
+    return CurrentUser(id=user_id, nickname=nickname, avatar=avatar, login=login)
 
 
 def load_current_user() -> None:
@@ -28,11 +54,20 @@ def load_current_user() -> None:
     user_id = session.get('user_id')
     if user_id is None or request.endpoint == 'static':
         return
+    if type(user_id) is not int:
+        session.clear()
+        return
+
+    cached = _cached_user(user_id)
+    if cached is not None:
+        g.user = cached
+        return
 
     res = get_profile(user_id=user_id)
     if res:
-        nickname, avatar = res.value
-        g.user = CurrentUser(id=user_id, nickname=nickname, avatar=avatar)
+        nickname, avatar, login = res.value
+        g.user = CurrentUser(id=user_id, nickname=nickname, avatar=avatar, login=login)
+        _remember(g.user)
         return
     if res.severity is Severity.INFO:
         session.clear()
@@ -78,8 +113,9 @@ def login():
             errors=[err_message(res)], login=login_value, next=request.form.get('next'),
         ), err_status(res)
 
-    user_id, *_ = res.value
+    user_id, login_name, nickname, avatar, *_ = res.value
     _start_session(user_id)
+    _remember(CurrentUser(id=user_id, nickname=nickname, avatar=avatar, login=login_name))
     return redirect(_next_url())
 
 
@@ -98,8 +134,9 @@ def register():
             'auth/register.html', errors=[err_message(res)], login=login_value,
         ), err_status(res)
 
-    user_id, *_ = res.value
+    user_id, login_name, nickname, avatar, *_ = res.value
     _start_session(user_id)
+    _remember(CurrentUser(id=user_id, nickname=nickname, avatar=avatar, login=login_name))
     return redirect(url_for('home.index'))
 
 

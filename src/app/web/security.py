@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from flask import Flask, Response
 
-# JS только своими файлами (никогда 'unsafe-inline'), CSS запрещён
+# JS и CSS только своими файлами, без inline
 SECURITY_HEADERS = {
     'Content-Security-Policy': (
-        "default-src 'self'; script-src 'self'; style-src 'none'; img-src 'self'; "
+        "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; "
         "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     ),
     'X-Content-Type-Options': 'nosniff',

@@ -30,6 +30,7 @@ def room_state(room: Room) -> dict:
     }
     return {
         'title': room.title,
+        'scenario_id': room.scenario_id,
         'is_started': room.is_started,
         'actor1': room.actor1,
         'actor2': room.actor2,
@@ -51,6 +52,14 @@ def room_state(room: Room) -> dict:
     }
 
 
+def not_in_room(room: Room, user_id: int) -> bool:
+    ''' Ушедший из активной сессии для страницы и сокета — как посторонний '''
+    player = room.players.get(user_id)
+    if player is None:
+        return True
+    return bool(room.is_started and player.get('left'))
+
+
 def broadcast_room(code: str) -> None:
     ''' Разослать участникам текущее состояние; если комнаты уже нет — сообщить о закрытии '''
     res = get_room(code=code)
@@ -68,7 +77,7 @@ class RoomNamespace(Namespace):
         user_id = session.get('user_id')
         code = auth.get('code') if isinstance(auth, dict) else None
         res = get_room(code=code)
-        if user_id is None or not res or user_id not in res.value.players:
+        if user_id is None or not res or not_in_room(res.value, user_id):
             raise ConnectionRefusedError('not a room member')
 
         join_room(code)

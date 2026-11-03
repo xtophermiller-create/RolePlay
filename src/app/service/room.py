@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import secrets
 from copy import deepcopy
-import random
 import string
 from .profile import get_profile
 from .session import create_session, PatchSession
@@ -50,13 +49,13 @@ def create_room(
     res = get_profile(user_id=user_id)
     if not res:
         return Err(meta='profile not found', severity=Severity.ERROR)
-    nickname, avatar = res.value
+    nickname, avatar, _ = res.value
 
     with manager.lock:
         def _generate_code() -> str:
             ''' Генерирует уникальный код  '''
             while True:
-                code = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+                code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
                 if code not in manager._rooms:
                     return code
 
@@ -138,7 +137,7 @@ def connect(
     res = get_profile(user_id=user_id)
     if not res:
         return Err(meta='profile not found', severity=Severity.ERROR)
-    nickname, avatar = res.value
+    nickname, avatar, _ = res.value
 
     with manager.lock:
         room = manager._rooms.get(code)
@@ -243,7 +242,7 @@ def choose_role(
         room.observer_ids.add(user_id)
         return Err(meta='role not found', severity=Severity.ERROR)
 
-isinstance()
+
 def choose_scenario(
         *,
         user_id: int | None = None,

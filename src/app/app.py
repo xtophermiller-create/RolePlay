@@ -19,7 +19,7 @@ limiter = Limiter(get_remote_address, storage_uri="memory://")
 socketio = SocketIO(async_mode="threading")
 
 from .config import configure, env_flag
-from .service import configurate_logging, start_room_cleanup
+from .service import configurate_logging, start_room_cleanup, start_draft_cleanup
 from .web import register_web
 
 
@@ -49,6 +49,7 @@ def create_app():
     if env_flag("TRUST_PROXY"):
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+    start_draft_cleanup()
     start_room_cleanup()
 
     return app # вернуть сам app

@@ -1,17 +1,71 @@
 {% extends 'base.html' %}
 {% import 'macros/forms.html' as forms %}
 {% block title %}Главная{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+{% block header %}{% endblock %}
+{% block main_class %}screen screen--home{% endblock %}
+{% block notices %}{% endblock %}
 {% block content %}
-<h1>Главная</h1>
-
-<h2>Новая комната</h2>
-<p>Создание новой комнаты закрывает вашу прежнюю.</p>
-{{ forms.action_button(url_for('room.create'), 'Создать комнату') }}
-
-<h2>Войти по коду</h2>
-<form method="post" action="{{ url_for('room.join') }}">
-  {{ forms.csrf_field() }}
-  <label>Код <input type="text" name="code" value="{{ code or '' }}" required minlength="8" maxlength="8"></label>
-  <button type="submit">Подключиться</button>
-</form>
+<div class="home">
+  <div class="home__brand">
+    <img
+      class="home__logo"
+      src="{{ url_for('static', filename='brand/roleplay.svg') }}"
+      alt=""
+      width="48"
+      height="48"
+      draggable="false"
+    >
+    <p class="home__brand-name">RolePlay</p>
+  </div>
+  <div class="home__groups">
+    <nav class="home__menu" aria-label="Профиль">
+      <a class="ui-btn" href="{{ url_for('profile.index') }}">Мой профиль</a>
+    </nav>
+    <nav class="home__menu" aria-label="Ролевки">
+      <form method="post" action="{{ url_for('room.create') }}">
+        {{ forms.csrf_field() }}
+        <button class="ui-btn" type="submit">Начать ролевку</button>
+      </form>
+      <a class="ui-btn" href="{{ url_for('history.index') }}">История ролевок</a>
+      <form class="home__join" method="post" action="{{ url_for('room.join') }}">
+        {{ forms.csrf_field() }}
+        <input
+          class="home__join-code"
+          name="code"
+          type="text"
+          value="{{ code or '' }}"
+          maxlength="8"
+          autocomplete="off"
+          spellcheck="false"
+          autocapitalize="off"
+          placeholder="Код для подключения"
+          aria-label="Код для подключения"
+          required
+        >
+        <button class="ui-btn home__join-go" type="submit" aria-label="Подключиться">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M5 11h11.2l-4.6-4.6 1.4-1.4L20 12l-7 7-1.4-1.4 4.6-4.6H5v-2z"/>
+          </svg>
+        </button>
+      </form>
+    </nav>
+    <nav class="home__menu" aria-label="Сценарии">
+      <a class="ui-btn" href="{{ url_for('library.index') }}">Мои сценарии</a>
+    </nav>
+  </div>
+  <form class="home__logout" method="post" action="{{ url_for('auth.logout') }}">
+    {{ forms.csrf_field() }}
+    <button class="ui-btn ui-btn--danger ui-btn--plain" type="submit">Выйти</button>
+  </form>
+  {% if errors %}
+  <ul class="home__error">
+    {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</div>
 {% endblock %}

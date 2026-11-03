@@ -8,29 +8,21 @@
   <link rel="icon" href="{{ url_for('static', filename='brand/favicon.ico') }}" sizes="any">
   <link rel="icon" href="{{ url_for('static', filename='brand/favicon.svg') }}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/favicon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/topbar.css') }}">
   {% block head %}{% endblock %}
 </head>
 <body>
-  <header>
-    <nav>
-      {% if current_user %}
-        <a href="{{ url_for('home.index') }}">Главная</a>
-        <a href="{{ url_for('library.index') }}">Библиотека</a>
-        <a href="{{ url_for('history.index') }}">История</a>
-        <a href="{{ url_for('profile.index') }}">Профиль ({{ current_user.nickname }})</a>
-        <form method="post" action="{{ url_for('auth.logout') }}">
-          {{ forms.csrf_field() }}
-          <button type="submit">Выйти</button>
-        </form>
-      {% else %}
-        <a href="{{ url_for('auth.login') }}">Вход</a>
-        <a href="{{ url_for('auth.register') }}">Регистрация</a>
-      {% endif %}
+  {% block header %}
+  <header class="ui-topbar">
+    <nav class="ui-topbar__nav" aria-label="Навигация">
+      <a class="ui-btn ui-btn--top" href="{{ url_for('home.index') }}">На главную</a>
     </nav>
   </header>
-  <hr>
-  <main>
-    {{ forms.errors_list(errors) }}
+  {% endblock %}
+  <main class="{% block main_class %}{% endblock %}">
+    {% block notices %}{{ forms.errors_list(errors) }}{% endblock %}
     {% block content %}{% endblock %}
   </main>
 </body>

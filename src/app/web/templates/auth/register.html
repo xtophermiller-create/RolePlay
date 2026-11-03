@@ -1,13 +1,35 @@
 {% extends 'base.html' %}
 {% import 'macros/forms.html' as forms %}
 {% block title %}Регистрация{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/field.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+{% block header %}{% endblock %}
+{% block main_class %}screen screen--auth{% endblock %}
+{% block notices %}{% endblock %}
 {% block content %}
-<h1>Регистрация</h1>
-<form method="post" action="{{ url_for('auth.register') }}">
-  {{ forms.csrf_field() }}
-  <p><label>Логин <input type="text" name="login" value="{{ login or '' }}" required autocomplete="username"></label></p>
-  <p><label>Пароль <input type="password" name="password" required autocomplete="new-password"></label></p>
-  <button type="submit">Зарегистрироваться</button>
-</form>
-<p><a href="{{ url_for('auth.login') }}">Вход</a></p>
+<div class="auth">
+  <nav class="auth__modes" aria-label="Вход или регистрация">
+    <a class="auth__mode is-current" href="{{ url_for('auth.register') }}" aria-current="page">Регистрация</a>
+    <a class="auth__mode" href="{{ url_for('auth.login') }}">Вход</a>
+  </nav>
+  <form class="auth__form" method="post" action="{{ url_for('auth.register') }}">
+    {{ forms.csrf_field() }}
+    <label class="ui-field">
+      <input class="ui-field__input" type="text" name="login" value="{{ login or '' }}" placeholder="Логин" required autocomplete="username" spellcheck="false">
+    </label>
+    <label class="ui-field">
+      <input class="ui-field__input" type="password" name="password" placeholder="Пароль" required autocomplete="new-password" spellcheck="false">
+    </label>
+    <button class="ui-btn ui-btn--accent auth__submit" type="submit">Зарегистрироваться</button>
+    {% if errors %}
+    <ul class="auth__error">
+      {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </form>
+</div>
 {% endblock %}

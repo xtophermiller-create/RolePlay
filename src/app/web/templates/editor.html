@@ -1,51 +1,107 @@
 {% extends 'base.html' %}
 {% block title %}Редактор{% endblock %}
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/editor.css') }}">
 <script src="{{ url_for('static', filename='js/vendor/socket.io.min.js') }}" defer></script>
 <script type="module" src="{{ url_for('static', filename='js/editor.js') }}"></script>
 {% endblock %}
 
 {% macro toolbar() %}
-<p data-toolbar>
-  <button type="button" data-command="bold" aria-pressed="false">Жирный</button>
-  <button type="button" data-command="italic" aria-pressed="false">Курсив</button>
-  <button type="button" data-command="strike" aria-pressed="false">Зачёркнутый</button>
-  <button type="button" data-command="underline" aria-pressed="false">Подчёркнутый</button>
-  <button type="button" data-command="link" aria-pressed="false">Ссылка</button>
-  <button type="button" data-command="orderedList" aria-pressed="false">Нумерованный список</button>
-  <button type="button" data-command="bulletList" aria-pressed="false">Маркированный список</button>
-  <button type="button" data-command="heading" aria-pressed="false">Заголовок H1</button>
-</p>
+<div class="role-pane__toolbar" data-toolbar>
+  <div class="role-pane__tool-group" role="group" aria-label="Форматирование текста">
+    <button class="role-pane__tool" type="button" data-command="bold" title="Жирный" aria-label="Жирный" aria-pressed="false"><b>B</b></button>
+    <button class="role-pane__tool" type="button" data-command="italic" title="Курсив" aria-label="Курсив" aria-pressed="false"><i>I</i></button>
+    <button class="role-pane__tool" type="button" data-command="underline" title="Подчёркнутый" aria-label="Подчёркнутый" aria-pressed="false"><u>U</u></button>
+    <button class="role-pane__tool" type="button" data-command="strike" title="Зачёркнутый" aria-label="Зачёркнутый" aria-pressed="false"><s>S</s></button>
+    <button class="role-pane__tool" type="button" data-command="heading" title="Заголовок" aria-label="Заголовок" aria-pressed="false">H</button>
+  </div>
+  <span class="role-pane__tool-sep" aria-hidden="true"></span>
+  <div class="role-pane__tool-group" role="group" aria-label="Ссылка">
+    <button class="role-pane__tool" type="button" data-command="link" title="Ссылка" aria-label="Ссылка" aria-pressed="false">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path fill="currentColor" d="M10.6 13.4a1 1 0 0 1 0-1.4l2.8-2.8a3 3 0 0 1 4.2 4.2l-1.4 1.4a1 1 0 1 1-1.4-1.4l1.4-1.4a1 1 0 0 0-1.4-1.4l-2.8 2.8a1 1 0 0 1-1.4 0Zm2.8-2.8a1 1 0 0 1 0 1.4l-2.8 2.8a1 1 0 1 0 1.4 1.4l2.8-2.8a3 3 0 0 0-4.2-4.2L9.2 10.6a1 1 0 1 0 1.4 1.4l1.4-1.4a1 1 0 0 1 1.4 0Z"/>
+      </svg>
+    </button>
+  </div>
+  <span class="role-pane__tool-sep" aria-hidden="true"></span>
+  <div class="role-pane__tool-group" role="group" aria-label="Список">
+    <button class="role-pane__tool" type="button" data-command="bulletList" title="Маркированный список" aria-label="Маркированный список" aria-pressed="false">•</button>
+    <button class="role-pane__tool" type="button" data-command="orderedList" title="Нумерованный список" aria-label="Нумерованный список" aria-pressed="false">1.</button>
+  </div>
+</div>
 {% endmacro %}
 
+{% block main_class %}screen screen--page screen--editor{% endblock %}
+{% block notices %}{% endblock %}
 {% block content %}
-{# поля заполняет editor.js из черновика, присланного сервером по сокету #}
-<div data-scenario-id="{{ scenario_id }}">
-<h1>Редактор сценария</h1>
-<noscript><p>Для редактора нужен JavaScript.</p></noscript>
-<p><a href="{{ url_for('library.index') }}">К библиотеке</a></p>
-<p>Статус: <span data-status>подключение…</span></p>
+<section class="scenario-editor" data-scenario-id="{{ scenario_id }}">
+  <header class="scenario-editor__top">
+    <div class="scenario-editor__top-lead">
+      <a class="scenario-editor__back" href="{{ url_for('library.index') }}" title="К сценариям" aria-label="К сценариям">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M15.4 5.4a1 1 0 0 1 0 1.4L10.2 12l5.2 5.2a1 1 0 1 1-1.4 1.4l-5.9-5.9a1 1 0 0 1 0-1.4l5.9-5.9a1 1 0 0 1 1.4 0z"/>
+        </svg>
+      </a>
+      <div class="scenario-editor__heading">
+        <p class="scenario-editor__eyebrow">Редактор сценария</p>
+        <input class="scenario-editor__title" type="text" data-field="title" placeholder="Название" aria-label="Название" disabled spellcheck="false">
+      </div>
+    </div>
+    <div class="scenario-editor__actions">
+      <p class="scenario-editor__status">Статус: <span data-status>подключение…</span></p>
+      <button class="ui-btn ui-btn--positive ui-btn--pill" type="button" data-save>Сохранить</button>
+    </div>
+  </header>
+  <noscript><p class="scenario-editor__empty">Для редактора нужен JavaScript.</p></noscript>
 
-<p><label>Название <input type="text" data-field="title"></label></p>
-<p><label>Роль 1 <input type="text" data-field="actor1"></label></p>
-<p><label>Роль 2 <input type="text" data-field="actor2"></label></p>
-<p><label>Цель роли 1<br><textarea data-field="target1"></textarea></label></p>
-<p><label>Цель роли 2<br><textarea data-field="target2"></textarea></label></p>
-<p><label>Контекст роли 1<br><textarea data-field="context1"></textarea></label></p>
-<p><label>Контекст роли 2<br><textarea data-field="context2"></textarea></label></p>
+  <div class="scenario-editor__panes">
+    <section class="role-pane">
+      <header class="role-pane__head">
+        <span class="role-pane__index" aria-hidden="true">01</span>
+        <div class="role-pane__identity">
+          <span class="role-pane__badge">Роль 1</span>
+          <input class="role-pane__label" type="text" data-field="actor1" placeholder="Имя роли" aria-label="Имя роли 1" disabled autocomplete="off" spellcheck="false">
+        </div>
+      </header>
+      <div class="role-pane__meta">
+        <label class="role-pane__field">
+          <span class="role-pane__field-name">Цель</span>
+          <textarea class="role-pane__textarea" data-field="target1" rows="3" placeholder="Чего хочет добиться эта роль" aria-label="Цель роли 1" disabled></textarea>
+        </label>
+        <label class="role-pane__field">
+          <span class="role-pane__field-name">Контекст</span>
+          <textarea class="role-pane__textarea" data-field="context1" rows="3" placeholder="Что было до этой ролевки" aria-label="Контекст роли 1" disabled></textarea>
+        </label>
+      </div>
+      <div class="role-pane__body" data-document="doc1">
+        {{ toolbar() }}
+        <div class="role-pane__editor" data-editor></div>
+      </div>
+    </section>
 
-<h2>Документ роли 1</h2>
-<div data-document="doc1">
-  {{ toolbar() }}
-  <div data-editor></div>
-</div>
-
-<h2>Документ роли 2</h2>
-<div data-document="doc2">
-  {{ toolbar() }}
-  <div data-editor></div>
-</div>
-
-<p><button type="button" data-save>Сохранить</button></p>
-</div>
+    <section class="role-pane">
+      <header class="role-pane__head">
+        <span class="role-pane__index" aria-hidden="true">02</span>
+        <div class="role-pane__identity">
+          <span class="role-pane__badge">Роль 2</span>
+          <input class="role-pane__label" type="text" data-field="actor2" placeholder="Имя роли" aria-label="Имя роли 2" disabled autocomplete="off" spellcheck="false">
+        </div>
+      </header>
+      <div class="role-pane__meta">
+        <label class="role-pane__field">
+          <span class="role-pane__field-name">Цель</span>
+          <textarea class="role-pane__textarea" data-field="target2" rows="3" placeholder="Чего хочет добиться эта роль" aria-label="Цель роли 2" disabled></textarea>
+        </label>
+        <label class="role-pane__field">
+          <span class="role-pane__field-name">Контекст</span>
+          <textarea class="role-pane__textarea" data-field="context2" rows="3" placeholder="Что было до этой ролевки" aria-label="Контекст роли 2" disabled></textarea>
+        </label>
+      </div>
+      <div class="role-pane__body" data-document="doc2">
+        {{ toolbar() }}
+        <div class="role-pane__editor" data-editor></div>
+      </div>
+    </section>
+  </div>
+</section>
 {% endblock %}

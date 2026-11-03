@@ -1,27 +1,66 @@
 {% extends 'base.html' %}
 {% import 'macros/forms.html' as forms %}
-{% block title %}Библиотека{% endblock %}
+{% block title %}Мои сценарии{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios.css') }}">
+{% endblock %}
+{% block main_class %}screen screen--page screen--scenarios{% endblock %}
+{% block notices %}{% endblock %}
 {% block content %}
-<h1>Библиотека сценариев</h1>
+<section class="scenarios">
+  <header class="scenarios__top">
+    <div class="scenarios__heading">
+      <p class="scenarios__eyebrow">Библиотека</p>
+      <h1 class="scenarios__title">Мои сценарии</h1>
+    </div>
+    <form class="scenarios__create" method="post" action="{{ url_for('library.create') }}">
+      {{ forms.csrf_field() }}
+      <input type="hidden" name="title" value="">
+      <button class="ui-btn ui-btn--accent ui-btn--pill" type="submit">Создать</button>
+    </form>
+  </header>
 
-<form method="post" action="{{ url_for('library.create') }}">
-  {{ forms.csrf_field() }}
-  <label>Название <input type="text" name="title"></label>
-  <button type="submit">Создать сценарий</button>
-</form>
+  {% if scenarios %}
+  <div class="scenarios-grid">
+    {% for scenario in scenarios %}
+    <article class="scenario-card">
+      <a class="scenario-card__cover" href="{{ url_for('editor.edit', scenario_id=scenario.id) }}">
+        <img
+          class="scenario-card__avatar"
+          src="{{ url_for('static', filename='icons/scenario-avatar.svg') }}"
+          alt=""
+          width="200"
+          height="200"
+          draggable="false"
+        >
+      </a>
+      <form class="scenario-card__delete" method="post" action="{{ url_for('library.delete', scenario_id=scenario.id) }}">
+        {{ forms.csrf_field() }}
+        <button class="ui-btn ui-btn--danger" type="submit" aria-label="Удалить сценарий" title="Удалить сценарий">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9zM7 9h2v10H7V9z"/>
+          </svg>
+        </button>
+      </form>
+      <a class="scenario-card__title" href="{{ url_for('editor.edit', scenario_id=scenario.id) }}">
+        <span class="scenario-card__title-text">{{ scenario.title or 'Без названия' }}</span>
+      </a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="scenarios-grid">
+    <div class="scenarios-empty">
+      <p class="scenarios-empty__title">Пока пусто</p>
+      <p class="scenarios-empty__text">Создай первый сценарий — и библиотека оживёт.</p>
+    </div>
+  </div>
+  {% endif %}
 
-{% if scenarios %}
-<table>
-  <tr><th>Название</th><th>Изменён</th><th></th></tr>
-  {% for scenario in scenarios %}
-  <tr>
-    <td><a href="{{ url_for('editor.edit', scenario_id=scenario.id) }}">{{ scenario.title }}</a></td>
-    <td>{{ scenario.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-    <td>{{ forms.action_button(url_for('library.delete', scenario_id=scenario.id), 'Удалить') }}</td>
-  </tr>
-  {% endfor %}
-</table>
-{% else %}
-<p>Сценариев пока нет.</p>
-{% endif %}
+  {% if errors %}
+  <ul class="scenarios__error">
+    {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
 {% endblock %}

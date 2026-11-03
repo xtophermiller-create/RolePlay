@@ -10,8 +10,8 @@ from ..domain import User
 def get_profile(
         *,
         user_id: int | None = None,
-) -> Result[tuple[str | None, str | None]]:
-    ''' Возвращает по user_id : nickname и avatar '''
+) -> Result[tuple[str | None, str | None, str]]:
+    ''' Возвращает по user_id : nickname, avatar и login '''
     # проверка user_id на тип int
     if type(user_id) is not int:
         return Err(meta="user_id is not integer", severity=Severity.ERROR)
@@ -20,13 +20,13 @@ def get_profile(
     try:
         with txn() as s:
             user = s.execute(
-                select(User.nickname, User.avatar).where(User.id == user_id),
+                select(User.nickname, User.avatar, User.login).where(User.id == user_id),
             ).one_or_none()
 
         if user is None:
             return Err(meta="Profile not found", severity=Severity.INFO)
 
-        return Ok(value=(user.nickname, user.avatar))
+        return Ok(value=(user.nickname, user.avatar, user.login))
 
     # критическая ошибка транзакции
     except SQLAlchemyError:
