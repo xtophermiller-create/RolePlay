@@ -54,12 +54,10 @@
 
 .ui-btn--pill {
   padding: 8px 18px;
-  border-radius: var(--radius-pill);
   font-weight: 600;
 }
 
 .ui-btn--top {
-  border-radius: var(--radius-pill);
   border: 3px solid var(--color-border);
 }
 
@@ -69,9 +67,65 @@
 
 .ui-btn--plain {
   border-color: transparent;
-  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--color-muted);
+}
+
+.ui-btn--pill,
+.ui-btn--top,
+.ui-btn--plain {
+  border-radius: calc(var(--control-height) / 2);
+}
+
+.ui-btn--icon {
+  flex: 0 0 var(--control-height);
+  width: var(--control-height);
+  min-width: var(--control-height);
+  padding: 0;
+}
+
+.ui-join {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.ui-back {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(33, 33, 33, 0.55);
+  color: var(--color-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ui-back:hover,
+.ui-back:focus-visible {
+  border-color: var(--color-border-hover);
+  background: var(--color-field);
+  color: var(--color-accent);
+}
+
+.ui-back:focus {
+  outline: none;
+}
+
+.ui-error {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-danger);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .ui-btn--plain:hover:not(:disabled),

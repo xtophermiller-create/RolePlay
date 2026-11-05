@@ -398,8 +398,15 @@ function start(page) {
   })
 
   const copy = page.querySelector('[data-lobby-copy]')
+  let copiedTimer = 0
   copy?.addEventListener('click', () => {
-    navigator.clipboard?.writeText(page.dataset.roomCode || '')
+    const pending = navigator.clipboard?.writeText(page.dataset.roomCode || '')
+    if (!pending) return
+    pending.then(() => {
+      copy.classList.add('is-copied')
+      window.clearTimeout(copiedTimer)
+      copiedTimer = window.setTimeout(() => copy.classList.remove('is-copied'), 1200)
+    }).catch(() => {})
   })
 
   const socket = io('/room', { auth: { code: page.dataset.roomCode } })

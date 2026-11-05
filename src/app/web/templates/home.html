@@ -4,6 +4,7 @@
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/field.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
 {% endblock %}
 {% block header %}{% endblock %}
@@ -32,10 +33,10 @@
         <button class="ui-btn" type="submit">Начать ролевку</button>
       </form>
       <a class="ui-btn" href="{{ url_for('history.index') }}">История ролевок</a>
-      <form class="home__join" method="post" action="{{ url_for('room.join') }}">
+      <form class="ui-join" method="post" action="{{ url_for('room.join') }}">
         {{ forms.csrf_field() }}
         <input
-          class="home__join-code"
+          class="ui-field__input home__join-code"
           name="code"
           type="text"
           value="{{ code or '' }}"
@@ -47,7 +48,7 @@
           aria-label="Код для подключения"
           required
         >
-        <button class="ui-btn home__join-go" type="submit" aria-label="Подключиться">
+        <button class="ui-btn ui-btn--icon" type="submit" aria-label="Подключиться">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path fill="currentColor" d="M5 11h11.2l-4.6-4.6 1.4-1.4L20 12l-7 7-1.4-1.4 4.6-4.6H5v-2z"/>
           </svg>
@@ -63,7 +64,7 @@
     <button class="ui-btn ui-btn--danger ui-btn--plain" type="submit">Выйти</button>
   </form>
   {% if errors %}
-  <ul class="home__error">
+  <ul class="ui-error">
     {% for error in errors %}<li>{{ error }}</li>{% endfor %}
   </ul>
   {% endif %}

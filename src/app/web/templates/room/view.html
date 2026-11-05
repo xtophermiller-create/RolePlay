@@ -24,7 +24,7 @@
       <h1 class="session-lobby__title" data-slot="title">Лобби</h1>
     </div>
     {% if current_user.id == room.owner_id %}
-    <button class="session-lobby__scenario" type="button" data-lobby-scenario {% if room.is_started %}hidden{% endif %}>Изменить сценарий</button>
+    <button class="ui-btn ui-btn--accent ui-btn--pill session-lobby__scenario" type="button" data-lobby-scenario {% if room.is_started %}hidden{% endif %}>Изменить сценарий</button>
     {% endif %}
     <p class="session-lobby__status" data-slot="status">подключение…</p>
   </header>
@@ -32,7 +32,7 @@
   <div class="session-lobby__wait" data-lobby-wait {% if room.is_started %}hidden{% endif %}>
   <div class="session-lobby__code">
     <span class="session-lobby__code-label">Ключ сессии</span>
-    <button class="session-lobby__code-btn" type="button" data-lobby-copy title="Скопировать ключ" aria-label="Скопировать ключ сессии">
+    <button class="ui-btn session-lobby__code-btn" type="button" data-lobby-copy title="Скопировать ключ" aria-label="Скопировать ключ сессии">
       <span class="session-lobby__code-value">{{ room.code }}</span>
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
         <path fill="currentColor" d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3zm0 2H5v11h10v-2H8V9zm2-4v11h9V5h-9z"/>
@@ -117,7 +117,7 @@
     </form>
   </div>
 
-  <ul class="session-lobby__error" data-lobby-error {% if not errors %}hidden{% endif %}>
+  <ul class="ui-error session-lobby__error" data-lobby-error {% if not errors %}hidden{% endif %}>
     {% for error in errors or [] %}<li>{{ error }}</li>{% endfor %}
   </ul>
 
@@ -132,7 +132,7 @@
     >
       <section class="scenarios">
         <header class="scenarios__top">
-          <button class="scenarios__back" type="button" data-lobby-scenario-close aria-label="Закрыть">
+          <button class="ui-back scenarios__back" type="button" data-lobby-scenario-close aria-label="Закрыть">
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path fill="currentColor" d="M15.4 5.4a1 1 0 0 1 0 1.4L10.2 12l5.2 5.2a1 1 0 1 1-1.4 1.4l-5.9-5.9a1 1 0 0 1 0-1.4l5.9-5.9a1 1 0 0 1 1.4 0z"/>
             </svg>
@@ -181,7 +181,7 @@
         </div>
         {% endif %}
 
-        <ul class="session-lobby__error" data-lobby-error hidden></ul>
+        <ul class="ui-error session-lobby__error" data-lobby-error hidden></ul>
       </section>
     </div>
   </div>

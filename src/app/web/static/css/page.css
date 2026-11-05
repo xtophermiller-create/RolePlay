@@ -169,15 +169,6 @@
   text-align: center;
 }
 
-.page__error {
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-danger);
-  font-size: 0.78rem;
-  line-height: 1.4;
-  text-align: center;
-}
 
 .page fieldset,
 .page [data-document],
@@ -185,7 +176,6 @@
 .page [data-slot="doc1"],
 .page [data-slot="doc2"] {
   width: 100%;
-}
   margin: 0;
   padding: 0;
   border: 0;

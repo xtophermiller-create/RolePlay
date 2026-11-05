@@ -184,14 +184,6 @@
   overflow-wrap: anywhere;
 }
 
-.scenarios__error {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-danger);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
 
 @media (max-width: 720px) {
   .screen--scenarios {

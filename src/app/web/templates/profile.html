@@ -25,17 +25,17 @@
     <label class="ui-field">
       <input class="ui-field__input" type="text" name="nickname" value="{{ nickname or '' }}" placeholder="Никнейм" required autocomplete="nickname" spellcheck="false">
     </label>
-    <div class="profile__join">
+    <div class="ui-join">
       <p class="profile__join-value" aria-label="Логин">{{ login or '' }}</p>
-      <button class="ui-btn profile__join-go" type="button" data-profile-open="login" aria-label="Изменить логин">
+      <button class="ui-btn ui-btn--icon" type="button" data-profile-open="login" aria-label="Изменить логин">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
         </svg>
       </button>
     </div>
-    <div class="profile__join">
+    <div class="ui-join">
       <p class="profile__join-value" aria-label="Пароль">********</p>
-      <button class="ui-btn profile__join-go" type="button" data-profile-open="password" aria-label="Изменить пароль">
+      <button class="ui-btn ui-btn--icon" type="button" data-profile-open="password" aria-label="Изменить пароль">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
         </svg>
@@ -44,7 +44,7 @@
     <button class="ui-btn ui-btn--positive ui-btn--pill profile__save" type="submit">Сохранить</button>
   </form>
   {% if errors and not open_popup %}
-  <ul class="profile__error">
+  <ul class="ui-error profile__error">
     {% for error in errors %}<li>{{ error }}</li>{% endfor %}
   </ul>
   {% endif %}
@@ -68,7 +68,7 @@
         <input class="ui-field__input" type="password" name="password" placeholder="Текущий пароль" maxlength="32" required autocomplete="current-password">
       </label>
       {% if open_popup == 'login' and errors %}
-      <ul class="profile__error">
+      <ul class="ui-error profile__error">
         {% for error in errors %}<li>{{ error }}</li>{% endfor %}
       </ul>
       {% endif %}
@@ -98,7 +98,7 @@
         <input class="ui-field__input" type="password" name="new_password" placeholder="Новый пароль" maxlength="32" required autocomplete="new-password">
       </label>
       {% if open_popup == 'password' and errors %}
-      <ul class="profile__error">
+      <ul class="ui-error profile__error">
         {% for error in errors %}<li>{{ error }}</li>{% endfor %}
       </ul>
       {% endif %}
