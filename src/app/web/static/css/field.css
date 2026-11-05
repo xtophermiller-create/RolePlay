@@ -16,6 +16,7 @@
   font: inherit;
   font-size: var(--control-font-size);
   outline: none;
+  transition: border-color var(--dur-fast) var(--ease);
 }
 
 .ui-field__input::placeholder {

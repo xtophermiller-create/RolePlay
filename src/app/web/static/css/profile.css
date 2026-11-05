@@ -44,6 +44,118 @@
   margin-top: 8px;
 }
 
+.profile__join {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.profile__join-value {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: var(--control-height);
+  margin: 0;
+  padding: var(--control-pad-y) 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-field);
+  color: var(--color-muted);
+  font: inherit;
+  font-size: var(--control-font-size);
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.profile__join-go {
+  flex: 0 0 var(--control-height);
+  width: var(--control-height);
+  min-width: var(--control-height);
+  padding: 0;
+}
+
+body.profile-popup-open {
+  overflow: hidden;
+}
+
+.profile-popup {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.profile-popup[hidden] {
+  display: none;
+}
+
+.profile-popup__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.profile-popup__panel {
+  position: relative;
+  z-index: 1;
+  width: min(22rem, 100%);
+  padding: 22px 22px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-bg);
+}
+
+.profile-popup__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-field);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.profile-popup__close:hover,
+.profile-popup__close:focus-visible {
+  border-color: var(--color-border-hover);
+  color: var(--color-accent);
+}
+
+.profile-popup__title {
+  margin: 0 36px 16px 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.profile-popup form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap);
+}
+
+.profile-popup__actions {
+  display: flex;
+  gap: var(--stack-gap);
+  margin-top: 8px;
+}
+
+.profile-popup__actions .ui-btn {
+  flex: 1;
+}
+
 .profile__error {
   margin: 12px 0 0;
   padding: 0;

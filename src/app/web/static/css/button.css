@@ -14,6 +14,12 @@
   font-weight: bold;
   cursor: pointer;
   text-decoration: none;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
 }
 
 .ui-btn:hover:not(:disabled) {
@@ -85,6 +91,14 @@
   opacity: 0.55;
   cursor: default;
   font-weight: normal;
+}
+
+.ui-btn:hover:not(:disabled) {
+  transform: scale(1.015);
+}
+
+.ui-btn:active:not(:disabled) {
+  transform: scale(0.985);
 }
 
 .ui-btn:focus {

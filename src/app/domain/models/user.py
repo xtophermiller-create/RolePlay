@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from ...app import db
+from .mixin import TimestampMixin
+
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import text, Integer, Identity, String, DateTime, Boolean
-from ...app import db
-from .mixin import TimestampMixin
 
 USER_LENGTH = {
     'MIN_LOGIN': 3,

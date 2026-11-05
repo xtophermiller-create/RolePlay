@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from sqlalchemy import Identity, CheckConstraint, Index, Integer, ForeignKey, String, text
 from .mixin import TimestampMixin
 from .scenario import SCENARIO_LENGTH
 from ...app import db
+
+from sqlalchemy import Identity, CheckConstraint, Integer, ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, array
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
 
 class Session(db.Model, TimestampMixin):

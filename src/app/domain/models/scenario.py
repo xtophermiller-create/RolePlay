@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
-from sqlalchemy import Identity, text, CheckConstraint, Integer, ForeignKey
 from .mixin import TimestampMixin, pg_default
 from ...app import db
-from sqlalchemy import String
+
+import json
+from sqlalchemy import String, Identity, text, CheckConstraint, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -95,79 +95,6 @@ class Scenario(db.Model, TimestampMixin):
     context2: Mapped[str | None] = mapped_column(String(SCENARIO_LENGTH['MAX_CONTEXT2']), nullable=True)
     document1: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'" + json.dumps(SCENARIO_TYPES['DOC']) + "'::jsonb"))
     document2: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'" + json.dumps(SCENARIO_TYPES['DOC']) + "'::jsonb"))
-
-
-EXAMPLE = {
-    'type': 'doc',
-    'content': [
-        {
-            'type': 'heading',
-            'content': 'SAMPLE'
-        },
-        {
-            'type': 'paragraph',
-            'content': [
-                {
-                    'type': 'text',
-                    'content': 'SAMPLE'
-                },
-                {
-                    'type': 'hardBreak',
-                    'content': None
-                }
-            ]
-        },
-        {
-            'type': 'image',
-            'content': 'SAMPLE.jpg'
-        },
-        {
-            'type': 'numList',
-            'content': [
-                {
-                    'type': 'paragraph',
-                    'content': [
-                        {
-                            'type': 'text',
-                            'content': 'SAMPLE'
-                        },
-                        {
-                            'type': 'hardBreak',
-                            'content': None
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            'type': 'markedList',
-            'content': [
-                {
-                    'type': 'paragraph',
-                    'content': [
-                        {
-                            'type': 'text',
-                            'content': 'SAMPLE'
-                        },
-                        {
-                            'type': 'hardBreak',
-                            'content': None
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            'type': 'section',
-            'content': [
-                # Сюда можно положить ВСЁ что было описано до этого, даже сам section в section положить можно.
-                # Но только до 5 уровня, то есть больше чем 5 section вместе с начальным нельзя положить друг в друга.
-                # В отдаленном смысле section - это doc внутри doc, по этому в нем можно все, что и в doc.
-            ]
-        }
-    ]
-}
-
 
 
 EXAMPLE2 = {

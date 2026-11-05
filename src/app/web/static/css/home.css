@@ -81,6 +81,7 @@
   font: inherit;
   font-size: var(--control-font-size);
   outline: none;
+  transition: border-color var(--dur-fast) var(--ease);
 }
 
 .home__join-code::placeholder {

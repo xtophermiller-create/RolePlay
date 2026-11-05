@@ -250,6 +250,7 @@
   line-height: 1.45;
   outline: none;
   resize: vertical;
+  transition: border-color var(--dur-fast) var(--ease);
 }
 
 .role-pane__textarea::placeholder {

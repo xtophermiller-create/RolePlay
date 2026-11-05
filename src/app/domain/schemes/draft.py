@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+from ..models import SCENARIO_DEFAULT, SCENARIO_TYPES
+
 from copy import deepcopy
 from dataclasses import dataclass, field
 from threading import RLock
-from typing import Any
-from ..models import SCENARIO_DEFAULT, SCENARIO_TYPES
 from time import monotonic
-import string
 
 
 @dataclass
