@@ -26,12 +26,16 @@
 
   --ease: ease;
   --dur-fast: 0.12s;
+  --dur-ui: 0.2s;
 
   --stack-gap: 8px;
   --field-area-max: 12.5rem;
 
   --font-ui: Geologica, "Segoe UI", Tahoma, sans-serif;
   --z-topbar: 100;
+  --z-confirm: 360;
+  --confirm-width: 22.5rem;
+  --shadow-popup: 0 18px 48px rgba(0, 0, 0, 0.5);
   --surface-panel: linear-gradient(
     180deg,
     rgba(33, 33, 33, 0.92) 0%,

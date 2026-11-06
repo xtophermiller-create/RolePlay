@@ -338,7 +338,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
         if value is None:
             plan['nickname']['checked'] = Ok(meta='value is None')
             return
-        symbols = LOW_LETTERS + DIGITS
+        symbols = LETTERS + RUSSIA_LETTERS + DIGITS
         for x in value:
             if x not in symbols + '_-.':
                 plan['nickname']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)

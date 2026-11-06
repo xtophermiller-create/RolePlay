@@ -10,7 +10,9 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/favicon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/button.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/confirm.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/topbar.css') }}">
+  <script type="module" src="{{ url_for('static', filename='js/confirm.js') }}"></script>
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -25,5 +27,16 @@
     {% block notices %}{{ forms.errors_list(errors) }}{% endblock %}
     {% block content %}{% endblock %}
   </main>
+  <div class="ui-confirm" id="ui-confirm" aria-hidden="true">
+    <div class="ui-confirm__backdrop" data-confirm-close></div>
+    <div class="ui-confirm__panel" role="dialog" aria-modal="true" aria-labelledby="ui-confirm-title">
+      <h2 class="ui-confirm__title" id="ui-confirm-title">Подтвердить?</h2>
+      <p class="ui-confirm__text" data-confirm-text hidden></p>
+      <div class="ui-confirm__actions">
+        <button class="ui-btn ui-btn--danger" type="button" data-confirm-ok>Да</button>
+        <button class="ui-btn ui-btn--accent" type="button" data-confirm-close>НЕТ!</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

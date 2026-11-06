@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS session_observers CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;

@@ -5,7 +5,7 @@ from sqlalchemy import insert, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from .helper import Result, Err, Ok, Severity, validate_fields, txn
-from ..domain import Session
+from ..domain import Session, SessionObserver
 
 
 @dataclass(frozen=True)
@@ -45,6 +45,16 @@ def create_session(
     # проверяем observer_ids на тип list
     if type(patch.observer_ids) is not list:
         return Err(meta='observer_ids is not list', severity=Severity.ERROR)
+    # проверяем каждый observer_id на тип int
+    for observer_id in patch.observer_ids:
+        if type(observer_id) is not int:
+            return Err(meta='observer_id is not int', severity=Severity.ERROR)
+    # проверяем, что id наблюдателей не повторяются
+    if len(set(patch.observer_ids)) != len(patch.observer_ids):
+        return Err(meta='observer_ids are not unique', severity=Severity.ERROR)
+    # актёр не может быть наблюдателем
+    if patch.actor1_id in patch.observer_ids or patch.actor2_id in patch.observer_ids:
+        return Err(meta='actor cannot be observer', severity=Severity.ERROR)
 
     # отправляем patch fields на валидацию и обрабатываем результат
     res = validate_fields(
@@ -115,8 +125,6 @@ def create_session(
         values['actor1_id'] = actor1_id
     if actor2_id is not None:
         values['actor2_id'] = actor2_id
-    if observer_ids is not None:
-        values['observer_ids'] = observer_ids
     if title is not None:
         values['title'] = title
     if version is not None:
@@ -141,9 +149,19 @@ def create_session(
     # заключаем транзакцию в try
     try:
         with txn() as s:
-            s.execute(
-                insert(Session).values(**values)
-            )
+            session = s.execute(
+                insert(Session).values(**values).returning(Session)
+            ).scalar_one_or_none()
+
+            # наблюдатели хранятся отдельно от сессии
+            if session is not None and observer_ids is not None:
+                for observer_id in observer_ids:
+                    s.execute(
+                        insert(SessionObserver).values(session_id=session.id, user_id=observer_id)
+                    )
+
+        if session is None:
+            return Err(meta='Session not found', severity=Severity.INFO)
 
         return Ok()
 
