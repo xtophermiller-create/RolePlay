@@ -55,6 +55,10 @@ body {
   min-height: 100%;
 }
 
+.ui-confirm:not(.is-open) {
+  display: none;
+}
+
 body {
   display: flex;
   flex-direction: column;
