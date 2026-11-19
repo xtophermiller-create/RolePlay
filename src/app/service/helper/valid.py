@@ -292,7 +292,7 @@ async def _checker(plan: dict, kwargs: dict) -> dict:
     async def _login(value):
         symbols = LETTERS + DIGITS + RUSSIA_LETTERS
         for x in value:
-            if x not in symbols + '_-.':
+            if x not in symbols + '_-. ':
                 plan['login']['checked'] = Err(meta='value contains prohibited simbols', severity=Severity.INFO)
                 return
         if not USER_LENGTH['MIN_LOGIN'] <= len(value) <= USER_LENGTH['MAX_LOGIN']:
