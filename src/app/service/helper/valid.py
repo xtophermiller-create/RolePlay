@@ -177,7 +177,7 @@ async def _normalizer(plan: dict, kwargs: dict) -> dict:
         plan['login']['normal'] = Ok(value=value, meta='Login successfully')
         return
     async def _auth_login(value):
-        value = value.strip().lower()
+        value = value.strip()
         plan['auth_login']['normal'] = Ok(value=value, meta='Login successfully')
         return
     async def _password(value):
